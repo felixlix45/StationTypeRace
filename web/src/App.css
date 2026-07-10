@@ -260,17 +260,63 @@ input {
   letter-spacing: 0.06em;
 }
 
-.prompt {
-  margin: 2.5rem 0 1.5rem;
-  animation: station-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
 .prompt-label {
-  margin: 0 0 0.75rem;
+  margin: 2.25rem 0 0;
   color: var(--fog);
   font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  text-align: center;
+}
+
+.station-stage {
+  --slide-shift: min(42vw, 22rem);
+  position: relative;
+  width: 100vw;
+  max-width: 100vw;
+  margin: 1rem 0 1.25rem;
+  margin-left: calc(50% - 50vw);
+  height: clamp(4.5rem, 12vw, 6.5rem);
+  overflow: hidden;
+}
+
+.station-slide {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(720px, 88vw);
+  text-align: center;
+  will-change: transform, opacity;
+  transition:
+    transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.station-stage.no-transition .station-slide {
+  transition: none;
+}
+
+.station-slide.is-current {
+  transform: translate(-50%, -50%);
+  opacity: 1;
+  z-index: 2;
+}
+
+.station-slide.is-next {
+  transform: translate(calc(-50% + var(--slide-shift)), -50%);
+  opacity: 0.38;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.station-stage.is-advancing .station-slide.is-current {
+  transform: translate(calc(-50% - var(--slide-shift)), -50%);
+  opacity: 0.15;
+}
+
+.station-stage.is-advancing .station-slide.is-next {
+  transform: translate(-50%, -50%);
+  opacity: 1;
 }
 
 .prompt-word {
@@ -280,6 +326,11 @@ input {
   line-height: 1.35;
   letter-spacing: 0.01em;
   word-break: break-word;
+}
+
+.prompt-word.preview {
+  color: color-mix(in srgb, var(--paper) 45%, transparent);
+  font-weight: 500;
 }
 
 .prompt-word .ok {
@@ -397,17 +448,6 @@ input {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes station-in {
-  from {
-    opacity: 0;
-    transform: translateX(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
   }
 }
 

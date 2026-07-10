@@ -6,6 +6,8 @@ import './App.css'
 
 type Phase = 'idle' | 'racing' | 'finished'
 
+const SLIDE_MS = 480
+
 function lineStyle(color: string): CSSProperties {
   return { ['--line' as string]: color } as CSSProperties
 }
@@ -36,12 +38,40 @@ function matchPrefix(target: string, typed: string): number {
   return i
 }
 
+function StationChars({
+  word,
+  matched,
+  typedLength,
+}: {
+  word: string
+  matched: number
+  typedLength: number
+}) {
+  return (
+    <>
+      {word.split('').map((char, i) => {
+        let cls = 'pending'
+        if (i < matched) cls = 'ok'
+        else if (i < typedLength) cls = 'bad'
+        return (
+          <span key={`${i}-${char}`} className={cls}>
+            {char === ' ' ? '\u00a0' : char}
+          </span>
+        )
+      })}
+    </>
+  )
+}
+
 export default function App() {
   const [phase, setPhase] = useState<Phase>('idle')
   const [race, setRace] = useState<RaceState | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [finalWpm, setFinalWpm] = useState(0)
+  const [isAdvancing, setIsAdvancing] = useState(false)
+  const [skipSlideTransition, setSkipSlideTransition] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const advanceTimer = useRef<number | null>(null)
 
   useEffect(() => {
     if (phase !== 'racing') return
@@ -50,10 +80,26 @@ export default function App() {
   }, [phase])
 
   useEffect(() => {
-    if (phase === 'racing') inputRef.current?.focus()
-  }, [phase, race?.stationIndex])
+    if (phase === 'racing' && !isAdvancing) inputRef.current?.focus()
+  }, [phase, race?.stationIndex, isAdvancing])
+
+  useEffect(() => {
+    return () => {
+      if (advanceTimer.current !== null) window.clearTimeout(advanceTimer.current)
+    }
+  }, [])
+
+  function clearAdvanceTimer() {
+    if (advanceTimer.current !== null) {
+      window.clearTimeout(advanceTimer.current)
+      advanceTimer.current = null
+    }
+  }
 
   function startRace() {
+    clearAdvanceTimer()
+    setIsAdvancing(false)
+    setSkipSlideTransition(false)
     setRace(createRace())
     setFinalWpm(0)
     setPhase('racing')
@@ -65,17 +111,17 @@ export default function App() {
     const wpm = calcWpm(state.correctChars, elapsed)
     setFinalWpm(wpm)
     setRace(state)
+    setIsAdvancing(false)
     setPhase('finished')
   }
 
   function onInputChange(value: string) {
-    if (!race || phase !== 'racing') return
+    if (!race || phase !== 'racing' || isAdvancing) return
 
     const target = race.line.stations[race.stationIndex]!
     const startedAt = race.startedAt ?? Date.now()
     const matched = matchPrefix(target, value)
 
-    // Reject extra wrong characters beyond first mismatch (keep one error visible)
     let nextInput = value
     if (value.length > matched + 1) {
       nextInput = value.slice(0, matched + 1)
@@ -96,40 +142,65 @@ export default function App() {
 
     const nextCorrect = race.correctChars + target.length
     const nextIndex = race.stationIndex + 1
-
-    if (nextIndex >= race.line.stations.length) {
-      finishRace(
-        {
-          ...race,
-          input: '',
-          startedAt,
-          correctChars: nextCorrect,
-          stationIndex: nextIndex,
-        },
-        Date.now(),
-      )
-      return
-    }
-
-    setRace({
+    const nextState: RaceState = {
       ...race,
       input: '',
       startedAt,
       correctChars: nextCorrect,
       stationIndex: nextIndex,
+    }
+
+    // Hold completed text on the center slide while it animates away
+    setRace({
+      ...race,
+      input: nextInput,
+      startedAt,
+      correctChars: nextCorrect,
     })
+    setIsAdvancing(true)
+
+    clearAdvanceTimer()
+    advanceTimer.current = window.setTimeout(() => {
+      if (nextIndex >= race.line.stations.length) {
+        finishRace(nextState, Date.now())
+        return
+      }
+
+      setSkipSlideTransition(true)
+      setRace(nextState)
+      setIsAdvancing(false)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setSkipSlideTransition(false))
+      })
+    }, SLIDE_MS)
   }
 
-  const target = race?.line.stations[race.stationIndex] ?? ''
-  const matched = race ? matchPrefix(target, race.input) : 0
+  const currentStation = race?.line.stations[race.stationIndex] ?? ''
+  const nextStation =
+    race && race.stationIndex + 1 < race.line.stations.length
+      ? race.line.stations[race.stationIndex + 1]!
+      : null
+
+  const matched =
+    race && !isAdvancing
+      ? matchPrefix(currentStation, race.input)
+      : currentStation.length
+  const typedLength =
+    race && !isAdvancing ? race.input.length : currentStation.length
+
   const liveElapsed =
     race?.startedAt && phase === 'racing' ? Math.max(now - race.startedAt, 1) : 0
   const liveCorrect =
-    (race?.correctChars ?? 0) + (phase === 'racing' ? matched : 0)
+    (race?.correctChars ?? 0) +
+    (phase === 'racing' && !isAdvancing ? matched : 0)
   const liveWpm = calcWpm(liveCorrect, liveElapsed)
   const progress =
     race && race.line.stations.length > 0
-      ? Math.min(race.stationIndex / race.line.stations.length, 1)
+      ? Math.min(
+          (isAdvancing ? race.stationIndex + 1 : race.stationIndex) /
+            race.line.stations.length,
+          1,
+        )
       : 0
 
   return (
@@ -170,7 +241,13 @@ export default function App() {
             </div>
           </header>
 
-          <div className="progress-rail" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
+          <div
+            className="progress-rail"
+            role="progressbar"
+            aria-valuenow={Math.round(progress * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
             <div className="progress-fill" style={{ width: `${progress * 100}%` }} />
           </div>
           <p className="stop-count">
@@ -178,20 +255,32 @@ export default function App() {
             {race.line.stations.length}
           </p>
 
-          <div className="prompt" key={race.stationIndex}>
-            <p className="prompt-label">Type this station</p>
-            <p className="prompt-word" aria-hidden="true">
-              {target.split('').map((char, i) => {
-                let cls = 'pending'
-                if (i < matched) cls = 'ok'
-                else if (i < race.input.length) cls = 'bad'
-                return (
-                  <span key={`${i}-${char}`} className={cls}>
-                    {char === ' ' ? '\u00a0' : char}
-                  </span>
-                )
-              })}
-            </p>
+          <p className="prompt-label">Type this station</p>
+
+          <div
+            className={[
+              'station-stage',
+              isAdvancing ? 'is-advancing' : '',
+              skipSlideTransition ? 'no-transition' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            aria-live="polite"
+          >
+            <div className="station-slide is-current">
+              <p className="prompt-word">
+                <StationChars
+                  word={currentStation}
+                  matched={matched}
+                  typedLength={typedLength}
+                />
+              </p>
+            </div>
+            {nextStation && (
+              <div className="station-slide is-next" aria-hidden="true">
+                <p className="prompt-word preview">{nextStation}</p>
+              </div>
+            )}
           </div>
 
           <label className="sr-only" htmlFor="station-input">
@@ -201,13 +290,14 @@ export default function App() {
             id="station-input"
             ref={inputRef}
             className="station-input"
-            value={race.input}
+            value={isAdvancing ? '' : race.input}
             onChange={(e) => onInputChange(e.target.value)}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck={false}
             placeholder="Start typing…"
+            disabled={isAdvancing}
           />
         </section>
       )}
