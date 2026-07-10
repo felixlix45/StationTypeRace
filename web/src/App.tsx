@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { ShareCard } from './components/ShareCard'
 import { pickRandomLine, type StationLine } from './data/stations'
+import {
+  captureShareCardPng,
+  downloadDataUrl,
+  shareFilename,
+  shareResultImage,
+  type ShareResult,
+} from './lib/shareCard'
 import { calcWpm, formatWpm } from './lib/wpm'
 import './App.css'
 
@@ -73,8 +81,12 @@ export default function App() {
   const [race, setRace] = useState<RaceState | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [finalWpm, setFinalWpm] = useState(0)
+  const [elapsedMs, setElapsedMs] = useState(0)
   const [slide, setSlide] = useState<SlideVisual | null>(null)
+  const [shareBusy, setShareBusy] = useState(false)
+  const [shareNote, setShareNote] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const shareCardRef = useRef<HTMLDivElement>(null)
   const slideTimer = useRef<number | null>(null)
 
   useEffect(() => {
@@ -114,6 +126,8 @@ export default function App() {
     setSlide(null)
     setRace(createRace())
     setFinalWpm(0)
+    setElapsedMs(0)
+    setShareNote(null)
     setPhase('racing')
     setNow(Date.now())
   }
@@ -124,7 +138,9 @@ export default function App() {
     const elapsed = state.startedAt ? endedAt - state.startedAt : 0
     const wpm = calcWpm(state.correctChars, elapsed)
     setFinalWpm(wpm)
+    setElapsedMs(elapsed)
     setRace(state)
+    setShareNote(null)
     setPhase('finished')
   }
 
@@ -167,6 +183,46 @@ export default function App() {
     setRace(nextState)
   }
 
+  async function withShareCard(
+    action: (dataUrl: string, result: ShareResult) => Promise<void>,
+  ) {
+    if (!race || !shareCardRef.current || shareBusy) return
+    const result: ShareResult = {
+      line: race.line,
+      wpm: finalWpm,
+      correctChars: race.correctChars,
+      elapsedMs,
+    }
+    setShareBusy(true)
+    setShareNote(null)
+    try {
+      const dataUrl = await captureShareCardPng(shareCardRef.current)
+      await action(dataUrl, result)
+    } catch {
+      setShareNote('Could not create image — try again')
+    } finally {
+      setShareBusy(false)
+    }
+  }
+
+  function saveShareImage() {
+    void withShareCard(async (dataUrl, result) => {
+      downloadDataUrl(dataUrl, shareFilename(result.line.id, result.wpm))
+      setShareNote('Image saved')
+    })
+  }
+
+  function shareShareImage() {
+    void withShareCard(async (dataUrl, result) => {
+      const outcome = await shareResultImage(
+        result,
+        dataUrl,
+        shareFilename(result.line.id, result.wpm),
+      )
+      setShareNote(outcome === 'shared' ? 'Shared' : 'Image saved')
+    })
+  }
+
   const currentStation = race?.line.stations[race.stationIndex] ?? ''
   const nextStation =
     race && race.stationIndex + 1 < race.line.stations.length
@@ -187,6 +243,16 @@ export default function App() {
       : 0
 
   const isSliding = slide !== null
+
+  const shareResult: ShareResult | null =
+    race && phase === 'finished'
+      ? {
+          line: race.line,
+          wpm: finalWpm,
+          correctChars: race.correctChars,
+          elapsedMs,
+        }
+      : null
 
   return (
     <div className="app" data-phase={phase}>
@@ -306,21 +372,41 @@ export default function App() {
         </section>
       )}
 
-      {phase === 'finished' && race && (
+      {phase === 'finished' && race && shareResult && (
         <section className="results" style={lineStyle(race.line.color)}>
-          <p className="results-kicker">Line cleared</p>
+          <p className="results-kicker">Line cleared — share your run</p>
           <h2 className="results-brand">StationTypeRace</h2>
-          <p className="results-line">
-            <span className="line-dot" />
-            {race.line.name}
-          </p>
-          <p className="results-wpm-label">Average WPM</p>
-          <p className="results-wpm">{formatWpm(finalWpm)}</p>
-          <p className="results-detail">
-            {race.line.stations.length} stations · {race.correctChars} characters
-          </p>
+
+          <div className="share-card-frame">
+            <ShareCard ref={shareCardRef} result={shareResult} />
+          </div>
+
+          <div className="cta-row share-actions">
+            <button
+              type="button"
+              className="btn primary"
+              onClick={saveShareImage}
+              disabled={shareBusy}
+            >
+              {shareBusy ? 'Preparing…' : 'Save image'}
+            </button>
+            <button
+              type="button"
+              className="btn neon"
+              onClick={shareShareImage}
+              disabled={shareBusy}
+            >
+              Share
+            </button>
+          </div>
+          {shareNote && (
+            <p className="share-note" role="status">
+              {shareNote}
+            </p>
+          )}
+
           <div className="cta-row">
-            <button type="button" className="btn primary" onClick={startRace}>
+            <button type="button" className="btn ghost" onClick={startRace}>
               Next random line
             </button>
             <button
