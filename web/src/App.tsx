@@ -20,6 +20,11 @@ type RaceState = {
   correctChars: number
 }
 
+type SlideVisual = {
+  outgoing: string
+  key: number
+}
+
 function createRace(): RaceState {
   return {
     line: pickRandomLine(),
@@ -68,10 +73,9 @@ export default function App() {
   const [race, setRace] = useState<RaceState | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [finalWpm, setFinalWpm] = useState(0)
-  const [isAdvancing, setIsAdvancing] = useState(false)
-  const [skipSlideTransition, setSkipSlideTransition] = useState(false)
+  const [slide, setSlide] = useState<SlideVisual | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const advanceTimer = useRef<number | null>(null)
+  const slideTimer = useRef<number | null>(null)
 
   useEffect(() => {
     if (phase !== 'racing') return
@@ -80,26 +84,34 @@ export default function App() {
   }, [phase])
 
   useEffect(() => {
-    if (phase === 'racing' && !isAdvancing) inputRef.current?.focus()
-  }, [phase, race?.stationIndex, isAdvancing])
+    if (phase === 'racing') inputRef.current?.focus()
+  }, [phase, race?.stationIndex])
 
   useEffect(() => {
     return () => {
-      if (advanceTimer.current !== null) window.clearTimeout(advanceTimer.current)
+      if (slideTimer.current !== null) window.clearTimeout(slideTimer.current)
     }
   }, [])
 
-  function clearAdvanceTimer() {
-    if (advanceTimer.current !== null) {
-      window.clearTimeout(advanceTimer.current)
-      advanceTimer.current = null
+  function clearSlideTimer() {
+    if (slideTimer.current !== null) {
+      window.clearTimeout(slideTimer.current)
+      slideTimer.current = null
     }
   }
 
+  function playSlide(outgoing: string) {
+    clearSlideTimer()
+    setSlide({ outgoing, key: Date.now() })
+    slideTimer.current = window.setTimeout(() => {
+      setSlide(null)
+      slideTimer.current = null
+    }, SLIDE_MS)
+  }
+
   function startRace() {
-    clearAdvanceTimer()
-    setIsAdvancing(false)
-    setSkipSlideTransition(false)
+    clearSlideTimer()
+    setSlide(null)
     setRace(createRace())
     setFinalWpm(0)
     setPhase('racing')
@@ -107,16 +119,17 @@ export default function App() {
   }
 
   function finishRace(state: RaceState, endedAt: number) {
+    clearSlideTimer()
+    setSlide(null)
     const elapsed = state.startedAt ? endedAt - state.startedAt : 0
     const wpm = calcWpm(state.correctChars, elapsed)
     setFinalWpm(wpm)
     setRace(state)
-    setIsAdvancing(false)
     setPhase('finished')
   }
 
   function onInputChange(value: string) {
-    if (!race || phase !== 'racing' || isAdvancing) return
+    if (!race || phase !== 'racing') return
 
     const target = race.line.stations[race.stationIndex]!
     const startedAt = race.startedAt ?? Date.now()
@@ -150,29 +163,14 @@ export default function App() {
       stationIndex: nextIndex,
     }
 
-    // Hold completed text on the center slide while it animates away
-    setRace({
-      ...race,
-      input: nextInput,
-      startedAt,
-      correctChars: nextCorrect,
-    })
-    setIsAdvancing(true)
+    if (nextIndex >= race.line.stations.length) {
+      finishRace(nextState, Date.now())
+      return
+    }
 
-    clearAdvanceTimer()
-    advanceTimer.current = window.setTimeout(() => {
-      if (nextIndex >= race.line.stations.length) {
-        finishRace(nextState, Date.now())
-        return
-      }
-
-      setSkipSlideTransition(true)
-      setRace(nextState)
-      setIsAdvancing(false)
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setSkipSlideTransition(false))
-      })
-    }, SLIDE_MS)
+    // Advance input target immediately — slide is visual only
+    playSlide(target)
+    setRace(nextState)
   }
 
   const currentStation = race?.line.stations[race.stationIndex] ?? ''
@@ -181,27 +179,20 @@ export default function App() {
       ? race.line.stations[race.stationIndex + 1]!
       : null
 
-  const matched =
-    race && !isAdvancing
-      ? matchPrefix(currentStation, race.input)
-      : currentStation.length
-  const typedLength =
-    race && !isAdvancing ? race.input.length : currentStation.length
+  const matched = race ? matchPrefix(currentStation, race.input) : 0
+  const typedLength = race?.input.length ?? 0
 
   const liveElapsed =
     race?.startedAt && phase === 'racing' ? Math.max(now - race.startedAt, 1) : 0
   const liveCorrect =
-    (race?.correctChars ?? 0) +
-    (phase === 'racing' && !isAdvancing ? matched : 0)
+    (race?.correctChars ?? 0) + (phase === 'racing' ? matched : 0)
   const liveWpm = calcWpm(liveCorrect, liveElapsed)
   const progress =
     race && race.line.stations.length > 0
-      ? Math.min(
-          (isAdvancing ? race.stationIndex + 1 : race.stationIndex) /
-            race.line.stations.length,
-          1,
-        )
+      ? Math.min(race.stationIndex / race.line.stations.length, 1)
       : 0
+
+  const isSliding = slide !== null
 
   return (
     <div className="app" data-phase={phase}>
@@ -258,16 +249,36 @@ export default function App() {
           <p className="prompt-label">Type this station</p>
 
           <div
-            className={[
-              'station-stage',
-              isAdvancing ? 'is-advancing' : '',
-              skipSlideTransition ? 'no-transition' : '',
-            ]
+            className={['station-stage', isSliding ? 'is-sliding' : '']
               .filter(Boolean)
               .join(' ')}
             aria-live="polite"
           >
-            <div className="station-slide is-current">
+            {slide && (
+              <div
+                key={`out-${slide.key}`}
+                className="station-slide is-outgoing"
+                aria-hidden="true"
+              >
+                <p className="prompt-word">
+                  <StationChars
+                    word={slide.outgoing}
+                    matched={slide.outgoing.length}
+                    typedLength={slide.outgoing.length}
+                  />
+                </p>
+              </div>
+            )}
+            <div
+              key={`cur-${race.stationIndex}`}
+              className={[
+                'station-slide',
+                'is-current',
+                isSliding ? 'is-entering' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
               <p className="prompt-word">
                 <StationChars
                   word={currentStation}
@@ -276,7 +287,7 @@ export default function App() {
                 />
               </p>
             </div>
-            {nextStation && (
+            {nextStation && !isSliding && (
               <div className="station-slide is-next" aria-hidden="true">
                 <p className="prompt-word preview">{nextStation}</p>
               </div>
@@ -290,14 +301,13 @@ export default function App() {
             id="station-input"
             ref={inputRef}
             className="station-input"
-            value={isAdvancing ? '' : race.input}
+            value={race.input}
             onChange={(e) => onInputChange(e.target.value)}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck={false}
             placeholder="Start typing…"
-            disabled={isAdvancing}
           />
         </section>
       )}
