@@ -133,16 +133,10 @@ export default function App() {
 
     const target = race.line.stations[race.stationIndex]!
     const startedAt = race.startedAt ?? Date.now()
-    const matched = matchPrefix(target, value)
+    // Allow wrong characters; only cap at the station name length
+    const nextInput = value.slice(0, target.length)
 
-    let nextInput = value
-    if (value.length > matched + 1) {
-      nextInput = value.slice(0, matched + 1)
-    }
-
-    const completed =
-      nextInput.length === target.length &&
-      nextInput.toLowerCase() === target.toLowerCase()
+    const completed = nextInput.toLowerCase() === target.toLowerCase()
 
     if (!completed) {
       setRace({
