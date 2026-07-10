@@ -452,7 +452,6 @@ input {
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--neon-cyan) 25%, transparent),
     0 0 0 1px color-mix(in srgb, var(--line) 40%, transparent);
-  image-rendering: pixelated;
 }
 
 .share-card-grid {
