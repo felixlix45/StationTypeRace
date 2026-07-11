@@ -26,9 +26,11 @@ import {
 } from './lib/raceStats'
 import {
   captureShareCardPng,
+  detectRaceDevice,
   downloadDataUrl,
   shareFilename,
   shareResultImage,
+  type RaceDevice,
   type ShareResult,
 } from './lib/shareCard'
 import {
@@ -70,6 +72,8 @@ type RaceState = {
   correctKeystrokes: number
   incorrectKeystrokes: number
   stationSamples: StationSample[]
+  /** Snapshotted at race start — mobile vs computer for the share card. */
+  device: RaceDevice
 }
 
 type SlideVisual = {
@@ -89,6 +93,7 @@ function createRace(line?: StationLine): RaceState {
     correctKeystrokes: 0,
     incorrectKeystrokes: 0,
     stationSamples: [],
+    device: detectRaceDevice(),
   }
 }
 
@@ -421,6 +426,7 @@ export default function App() {
       accuracy: finalAccuracy,
       correctChars: race.correctChars,
       elapsedMs,
+      device: race.device,
     }
     setShareBusy(true)
     setShareNote(null)
@@ -500,6 +506,7 @@ export default function App() {
           accuracy: finalAccuracy,
           correctChars: race.correctChars,
           elapsedMs,
+          device: race.device,
         }
       : null
 
@@ -692,20 +699,31 @@ export default function App() {
             </div>
 
             <label className="sr-only" htmlFor="station-input">
-              Station name
+              Type the station shown above
             </label>
             <input
               id="station-input"
               ref={inputRef}
               className="station-input"
+              type="text"
+              name="str-race-prompt"
               value={race.input}
               onChange={(e) => onInputChange(e.target.value)}
               onBeforeInput={onStationBeforeInput}
               onKeyDown={onStationKeyDown}
-              autoComplete="off"
+              // Mobile Safari/Chrome ignore "off" and classify this as a name
+              // field (label used to say "Station name"). Non-contact token +
+              // password-manager ignores keep the typing race free of Autofill.
+              autoComplete="one-time-code"
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
+              inputMode="text"
+              enterKeyHint="next"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-form-type="other"
+              data-bwignore="true"
               placeholder={
                 stationComplete
                   ? isLastStation
