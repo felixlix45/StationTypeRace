@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { CSSProperties, KeyboardEvent } from 'react'
+import type { CSSProperties, FormEvent, KeyboardEvent } from 'react'
 import {
   DroneBackdrop,
   pickRandomLandmark,
@@ -292,11 +292,23 @@ export default function App() {
     if (!current || phaseRef.current !== 'racing') return
 
     const target = current.line.stations[current.stationIndex]!
+    const prev = current.input
+
+    // Soft keyboards often insert Space via input only (no keydown). When the
+    // station is already full-length, treat that Space as advance — do not
+    // count it as a keystroke error (slice would otherwise drop it silently).
+    if (
+      prev.length === target.length &&
+      (value.length > target.length || value.endsWith(' '))
+    ) {
+      advanceStation()
+      return
+    }
+
     const nowTs = Date.now()
     const startedAt = current.startedAt ?? nowTs
     const stationStartedAt = current.stationStartedAt ?? nowTs
     const nextInput = value.slice(0, target.length)
-    const prev = current.input
 
     let correctKeystrokes = current.correctKeystrokes
     let incorrectKeystrokes = current.incorrectKeystrokes
@@ -332,6 +344,30 @@ export default function App() {
     }
 
     commitRace(updated)
+  }
+
+  /** Soft-keyboard Space/Enter — beforeinput fires when keydown often does not. */
+  function onStationBeforeInput(e: FormEvent<HTMLInputElement>) {
+    const current = raceRef.current
+    if (!current || phaseRef.current !== 'racing') return
+
+    const target = current.line.stations[current.stationIndex]!
+    const canAdvance = current.input.length === target.length
+    if (!canAdvance) return
+
+    const ne = e.nativeEvent as InputEvent
+    const insertingSpace =
+      ne.inputType === 'insertText' && ne.data === ' '
+    const insertingBreak =
+      ne.inputType === 'insertLineBreak' ||
+      ne.inputType === 'insertParagraph'
+    const isLast =
+      current.stationIndex === current.line.stations.length - 1
+
+    if (insertingSpace || (insertingBreak && isLast)) {
+      e.preventDefault()
+      advanceStation()
+    }
   }
 
   function onStationKeyDown(e: KeyboardEvent<HTMLInputElement>) {
@@ -664,6 +700,7 @@ export default function App() {
               className="station-input"
               value={race.input}
               onChange={(e) => onInputChange(e.target.value)}
+              onBeforeInput={onStationBeforeInput}
               onKeyDown={onStationKeyDown}
               autoComplete="off"
               autoCorrect="off"
