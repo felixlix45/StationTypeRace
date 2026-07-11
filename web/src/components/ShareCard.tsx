@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import { formatWpm } from '../lib/wpm'
 import { formatElapsed, type ShareResult } from '../lib/shareCard'
 import { PixelTrain } from './PixelTrain'
+import { PixelStationBuilding } from './PixelStationBuilding'
 
 function lineStyle(color: string): CSSProperties {
   return { ['--line' as string]: color } as CSSProperties
@@ -66,14 +67,23 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         <div className="share-card-stations">
           <p className="share-card-stations-label">Stations typed</p>
           <ul className="share-card-station-list">
-            {preview.map((name, i) => (
-              <li
-                key={`${name}-${i}`}
-                className={name === '…' ? 'is-ellipsis' : undefined}
-              >
-                {name}
-              </li>
-            ))}
+            {preview.map((name, i) =>
+              name === '…' ? (
+                <li key={`${name}-${i}`} className="is-ellipsis">
+                  {name}
+                </li>
+              ) : (
+                <li key={`${name}-${i}`} className="share-card-station-chip">
+                  <PixelStationBuilding
+                    color={line.color}
+                    variant={i}
+                    glowId={`station-glow-${i}`}
+                    className="share-card-station-building"
+                  />
+                  <span className="share-card-station-name">{name}</span>
+                </li>
+              ),
+            )}
           </ul>
         </div>
 
