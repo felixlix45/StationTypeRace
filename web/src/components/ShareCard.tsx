@@ -1,7 +1,11 @@
 import { forwardRef, useLayoutEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { formatAccuracy, formatWpm } from '../lib/wpm'
-import { formatElapsed, type ShareResult } from '../lib/shareCard'
+import {
+  formatElapsed,
+  formatRaceDevice,
+  type ShareResult,
+} from '../lib/shareCard'
 import { PixelTrain } from './PixelTrain'
 import { PixelStationBuilding } from './PixelStationBuilding'
 
@@ -62,6 +66,23 @@ function BrandMark({ className = '' }: { className?: string }) {
   )
 }
 
+function DeviceTag({
+  device,
+  className = '',
+}: {
+  device: ShareResult['device']
+  className?: string
+}) {
+  return (
+    <span
+      className={`share-device-tag ${className}`.trim()}
+      data-device={device}
+    >
+      {formatRaceDevice(device)}
+    </span>
+  )
+}
+
 function NeonScoreBody({ result }: { result: ShareResult }) {
   const { line, wpm, rawWpm, accuracy, elapsedMs } = result
   const stations = line.stations
@@ -79,6 +100,7 @@ function NeonScoreBody({ result }: { result: ShareResult }) {
       <header className="share-card-top">
         <p className="share-card-kicker">Line cleared</p>
         <BrandMark />
+        <DeviceTag device={result.device} />
       </header>
 
       <div className="share-card-train">
@@ -155,6 +177,7 @@ function RouteClearedBody({ result }: { result: ShareResult }) {
       <header className="sc-route-head">
         <p className="sc-route-kicker">{line.system} · cleared</p>
         <BrandMark className="sc-route-brand" />
+        <DeviceTag device={result.device} />
       </header>
 
       <div className="sc-route-hero-line">
@@ -209,6 +232,7 @@ function MinimalTypeBody({ result }: { result: ShareResult }) {
 
       <header className="sc-min-head">
         <p className="sc-min-brand">StationTypeRace</p>
+        <DeviceTag device={result.device} className="sc-min-device" />
         <div className="sc-min-rule" aria-hidden="true" />
       </header>
 
@@ -299,7 +323,7 @@ function TransitTicketBody({ result }: { result: ShareResult }) {
           ))}
         </div>
         <p className="sc-ticket-serial">
-          STR · {line.id.toUpperCase()} · JAKARTA
+          STR · {line.id.toUpperCase()} · {formatRaceDevice(result.device).toUpperCase()} · JAKARTA
         </p>
       </div>
     </>
@@ -319,6 +343,7 @@ function MonasPosterBody({ result }: { result: ShareResult }) {
       <header className="sc-monas-head">
         <p className="sc-monas-kicker">Jakarta · cleared</p>
         <BrandMark className="sc-monas-brand" />
+        <DeviceTag device={result.device} />
       </header>
 
       <div className="sc-monas-stage">
@@ -393,6 +418,8 @@ function MonasPosterBody({ result }: { result: ShareResult }) {
           <span>{formatElapsed(elapsedMs)}</span>
           <span aria-hidden="true">·</span>
           <span>{line.stations.length} stops</span>
+          <span aria-hidden="true">·</span>
+          <span>{formatRaceDevice(result.device)}</span>
         </div>
       </div>
     </>
@@ -453,6 +480,7 @@ function PixelRailBody({ result }: { result: ShareResult }) {
       <header className="sc-pixel-head">
         <BrandMark className="sc-pixel-brand" />
         <p className="sc-pixel-kicker">PIXEL CLEAR</p>
+        <DeviceTag device={result.device} className="sc-pixel-device" />
       </header>
       <div className="sc-pixel-stage">
         <PixelTrain color={line.color} className="sc-pixel-train" />
@@ -475,6 +503,8 @@ function PixelRailBody({ result }: { result: ShareResult }) {
         <span>{formatAccuracy(accuracy)}</span>
         <span aria-hidden="true">·</span>
         <span>{formatElapsed(elapsedMs)}</span>
+        <span aria-hidden="true">·</span>
+        <span>{formatRaceDevice(result.device)}</span>
       </footer>
     </>
   )
