@@ -1539,6 +1539,16 @@ input {
   text-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 75%, transparent);
 }
 
+/* iOS Safari contact/credential autofill chrome */
+.station-input::-webkit-contacts-auto-fill-button,
+.station-input::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  opacity: 0;
+}
+
 .results {
   text-align: center;
   animation: rise-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -1936,6 +1946,43 @@ input {
   letter-spacing: 0.2em;
   text-transform: uppercase;
   text-shadow: 0 0 10px color-mix(in srgb, var(--neon-cyan) 70%, transparent);
+}
+
+.share-device-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.45rem;
+  padding: 0.18rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--line) 45%, transparent);
+  border-radius: 0.15rem;
+  color: color-mix(in srgb, var(--paper) 88%, var(--line));
+  font-family: var(--font-mono);
+  font-size: clamp(0.48rem, 3.2cqw, 0.58rem);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, #000 70%, transparent);
+}
+
+.share-device-tag[data-device='mobile'] {
+  border-color: color-mix(in srgb, var(--neon-cyan, #5ce1ff) 50%, transparent);
+  color: color-mix(in srgb, var(--neon-cyan, #5ce1ff) 75%, var(--paper));
+}
+
+.share-device-tag[data-device='computer'] {
+  border-color: color-mix(in srgb, var(--signal) 45%, transparent);
+  color: color-mix(in srgb, var(--signal) 70%, var(--paper));
+}
+
+.sc-min-device {
+  margin-top: 0.35rem;
+  align-self: flex-start;
+}
+
+.sc-pixel-device {
+  margin-top: 0.35rem;
 }
 
 /* Stacked wordmark â€” full brand readable on narrow 9:16 */
