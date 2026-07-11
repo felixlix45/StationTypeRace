@@ -585,7 +585,12 @@ export default function App() {
 
   function saveShareImage() {
     void withShareCard(async (dataUrl, result) => {
-      downloadDataUrl(dataUrl, shareFilename(result.line.id, result.wpm))
+      const filename = shareFilename(
+        result.line.id,
+        result.wpm,
+        shareVariant,
+      )
+      await downloadDataUrl(dataUrl, filename)
       setShareNote('Image saved')
     })
   }
@@ -595,7 +600,7 @@ export default function App() {
       const outcome = await shareResultImage(
         result,
         dataUrl,
-        shareFilename(result.line.id, result.wpm),
+        shareFilename(result.line.id, result.wpm, shareVariant),
       )
       setShareNote(outcome === 'shared' ? 'Shared' : 'Image saved')
     })

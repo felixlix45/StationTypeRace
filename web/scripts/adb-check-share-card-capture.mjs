@@ -88,14 +88,14 @@ const preview = await page.evaluate(() => {
 })
 console.log('PREVIEW', JSON.stringify(preview, null, 2))
 
-// Intercept data-URL downloads from Save image
+// Intercept Save image — prefers blob: (mobile-safe) or data: hrefs
 const dataUrls = await page.evaluate(async () => {
   const captured = []
   const proto = HTMLAnchorElement.prototype
   const orig = proto.click
   proto.click = function clickPatched() {
-    if (this.download && typeof this.href === 'string' && this.href.startsWith('data:image')) {
-      captured.push(this.href)
+    if (this.download && typeof this.href === 'string') {
+      captured.push({ href: this.href, download: this.download })
     }
     return orig.apply(this, arguments)
   }
@@ -107,7 +107,23 @@ const dataUrls = await page.evaluate(async () => {
     await new Promise((r) => setTimeout(r, 100))
   }
   proto.click = orig
-  return captured
+  if (captured.length === 0) return []
+  const { href, download } = captured[0]
+  if (href.startsWith('data:image')) {
+    return [{ dataUrl: href, filename: download }]
+  }
+  if (href.startsWith('blob:')) {
+    const res = await fetch(href)
+    const blob = await res.blob()
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+    return [{ dataUrl, filename: download }]
+  }
+  return []
 })
 
 if (dataUrls.length === 0) {
@@ -117,12 +133,18 @@ if (dataUrls.length === 0) {
   process.exit(1)
 }
 
-const png = pngSizeFromDataUrl(dataUrls[0])
+const { dataUrl, filename } = dataUrls[0]
+const png = pngSizeFromDataUrl(dataUrl)
 fs.writeFileSync(
   `${out}/share-card-mobile.png`,
-  Buffer.from(dataUrls[0].split(',')[1], 'base64'),
+  Buffer.from(dataUrl.split(',')[1], 'base64'),
 )
 console.log('PNG', JSON.stringify(png))
+console.log('FILENAME', filename)
+
+const uniqueName =
+  typeof filename === 'string' &&
+  /-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-[a-z0-9]+\.png$/i.test(filename)
 
 adbShot('06-finished-preview')
 
@@ -135,6 +157,8 @@ console.log(
     {
       layoutOk,
       pngOk,
+      uniqueName,
+      filename,
       previewWidth: preview.cardOffsetWidth,
       pngSize: `${png.width}x${png.height}`,
       brandFontSize: preview.brandFontSize,
@@ -144,11 +168,11 @@ console.log(
   ),
 )
 
-if (!layoutOk || !pngOk) {
-  console.error('RED: share card capture not at canonical size')
+if (!layoutOk || !pngOk || !uniqueName) {
+  console.error('RED: share card capture / filename check failed')
   process.exitCode = 1
 } else {
-  console.log('GREEN: mobile preview layout 280px; PNG 1080×1920')
+  console.log('GREEN: mobile preview layout 280px; PNG 1080×1920; unique filename')
 }
 
 await browser.close()

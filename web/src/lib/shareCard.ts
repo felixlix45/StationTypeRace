@@ -195,14 +195,28 @@ export async function captureShareCardPng(
   }
 }
 
-export function downloadDataUrl(dataUrl: string, filename: string) {
-  const a = document.createElement('a')
-  a.href = dataUrl
-  a.download = filename
-  a.rel = 'noopener'
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
+export async function downloadDataUrl(
+  dataUrl: string,
+  filename: string,
+): Promise<void> {
+  // Mobile Chrome often ignores <a download> for large data: URLs.
+  // Blob object URLs are reliable and keep the chosen filename.
+  const res = await fetch(dataUrl)
+  const blob = await res.blob()
+  const objectUrl = URL.createObjectURL(blob)
+  try {
+    const a = document.createElement('a')
+    a.href = objectUrl
+    a.download = filename
+    a.rel = 'noopener'
+    a.style.display = 'none'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  } finally {
+    // Delay revoke so the browser can start the download first.
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 2_000)
+  }
 }
 
 export async function dataUrlToFile(
@@ -242,10 +256,25 @@ export async function shareResultImage(
     }
   }
 
-  downloadDataUrl(dataUrl, filename)
+  await downloadDataUrl(dataUrl, filename)
   return 'downloaded'
 }
 
-export function shareFilename(lineId: string, wpm: number): string {
-  return `station-type-race-${lineId}-${wpm}wpm.png`
+/** Unique per save so mobile browsers do not collide / silently skip overwrites. */
+export function shareFilename(
+  lineId: string,
+  wpm: number,
+  variant?: string,
+): string {
+  const safeLine = lineId.replace(/[^a-z0-9_-]+/gi, '-').toLowerCase()
+  const safeVariant = (variant ?? 'card')
+    .replace(/[^a-z0-9_-]+/gi, '-')
+    .toLowerCase()
+  const stamp = new Date()
+    .toISOString()
+    .replace(/[:.]/g, '-')
+    .replace('T', '-')
+    .slice(0, 19)
+  const uniq = Math.random().toString(36).slice(2, 8)
+  return `station-type-race-${safeLine}-${safeVariant}-${wpm}wpm-${stamp}-${uniq}.png`
 }
