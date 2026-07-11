@@ -1901,13 +1901,29 @@ input {
   color: color-mix(in srgb, var(--line) 55%, var(--fog));
 }
 
-.share-card-frame {
-  margin: 0;
-  width: 100%;
-  max-width: min(280px, 78vw);
-  min-width: 0;
+.share-card-frame-scale {
+  /* Shrink the *preview* on narrow phones without changing the card's
+     layout width — cqw typography stays identical to the PNG export. */
+  container-type: inline-size;
+  container-name: share-preview;
+  width: min(280px, 100%);
+  aspect-ratio: 9 / 16;
+  position: relative;
+  margin-inline: auto;
   filter: drop-shadow(0 0 28px color-mix(in srgb, var(--line) 35%, transparent));
   animation: wpm-pop 0.55s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.share-card-frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 0;
+  width: 280px;
+  max-width: none;
+  min-width: 280px;
+  transform: scale(calc(100cqw / 280));
+  transform-origin: top left;
 }
 
 .share-card {
@@ -4175,8 +4191,8 @@ input {
     gap: 1.35rem;
   }
 
-  .share-card-frame {
-    max-width: min(300px, 72vw);
+  .share-card-frame-scale {
+    width: min(280px, 72vw);
   }
 }
 
@@ -4540,8 +4556,8 @@ input {
     margin-top: 1.25rem;
   }
 
-  .share-card-frame {
-    max-width: min(300px, 78vw);
+  .share-card-frame-scale {
+    width: min(280px, 78vw);
     margin-top: 0;
   }
 
@@ -4730,9 +4746,8 @@ input {
     max-width: min(400px, 96vw);
   }
 
-  .share-card-frame {
+  .share-card-frame-scale {
     width: min(280px, 82vw);
-    max-width: min(280px, 82vw);
   }
 }
 
@@ -4887,8 +4902,8 @@ input {
     max-width: min(340px, 94vw);
   }
 
-  .share-card-frame {
-    max-width: min(280px, 70vw);
+  .share-card-frame-scale {
+    width: min(280px, 70vw);
   }
 }
 
