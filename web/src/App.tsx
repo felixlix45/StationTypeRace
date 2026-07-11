@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { ShareCard } from './components/ShareCard'
 import { pickRandomLine, type StationLine } from './data/stations'
+import {
+  captureShareCardPng,
+  downloadDataUrl,
+  shareFilename,
+  shareResultImage,
+  type ShareResult,
+} from './lib/shareCard'
 import { calcWpm, formatWpm } from './lib/wpm'
 import './App.css'
 
@@ -35,29 +43,26 @@ function createRace(): RaceState {
   }
 }
 
-function matchPrefix(target: string, typed: string): number {
+/** Count characters that match the target at the same index (mistakes do not block later hits). */
+function countCorrectChars(target: string, typed: string): number {
   const t = target.toLowerCase()
   const s = typed.toLowerCase()
-  let i = 0
-  while (i < s.length && i < t.length && s[i] === t[i]) i += 1
-  return i
+  const len = Math.min(s.length, t.length)
+  let n = 0
+  for (let i = 0; i < len; i += 1) {
+    if (s[i] === t[i]) n += 1
+  }
+  return n
 }
 
-function StationChars({
-  word,
-  matched,
-  typedLength,
-}: {
-  word: string
-  matched: number
-  typedLength: number
-}) {
+function StationChars({ word, typed }: { word: string; typed: string }) {
+  const t = typed.toLowerCase()
+  const w = word.toLowerCase()
   return (
     <>
       {word.split('').map((char, i) => {
         let cls = 'pending'
-        if (i < matched) cls = 'ok'
-        else if (i < typedLength) cls = 'bad'
+        if (i < typed.length) cls = t[i] === w[i] ? 'ok' : 'bad'
         return (
           <span key={`${i}-${char}`} className={cls}>
             {char === ' ' ? '\u00a0' : char}
@@ -73,8 +78,12 @@ export default function App() {
   const [race, setRace] = useState<RaceState | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [finalWpm, setFinalWpm] = useState(0)
+  const [elapsedMs, setElapsedMs] = useState(0)
   const [slide, setSlide] = useState<SlideVisual | null>(null)
+  const [shareBusy, setShareBusy] = useState(false)
+  const [shareNote, setShareNote] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const shareCardRef = useRef<HTMLDivElement>(null)
   const slideTimer = useRef<number | null>(null)
 
   useEffect(() => {
@@ -114,6 +123,8 @@ export default function App() {
     setSlide(null)
     setRace(createRace())
     setFinalWpm(0)
+    setElapsedMs(0)
+    setShareNote(null)
     setPhase('racing')
     setNow(Date.now())
   }
@@ -124,7 +135,9 @@ export default function App() {
     const elapsed = state.startedAt ? endedAt - state.startedAt : 0
     const wpm = calcWpm(state.correctChars, elapsed)
     setFinalWpm(wpm)
+    setElapsedMs(elapsed)
     setRace(state)
+    setShareNote(null)
     setPhase('finished')
   }
 
@@ -136,7 +149,8 @@ export default function App() {
     // Allow wrong characters; only cap at the station name length
     const nextInput = value.slice(0, target.length)
 
-    const completed = nextInput.toLowerCase() === target.toLowerCase()
+    // Advance when the full name is typed — mistakes do not block later correct chars
+    const completed = nextInput.length === target.length
 
     if (!completed) {
       setRace({
@@ -147,7 +161,7 @@ export default function App() {
       return
     }
 
-    const nextCorrect = race.correctChars + target.length
+    const nextCorrect = race.correctChars + countCorrectChars(target, nextInput)
     const nextIndex = race.stationIndex + 1
     const nextState: RaceState = {
       ...race,
@@ -167,19 +181,59 @@ export default function App() {
     setRace(nextState)
   }
 
+  async function withShareCard(
+    action: (dataUrl: string, result: ShareResult) => Promise<void>,
+  ) {
+    if (!race || !shareCardRef.current || shareBusy) return
+    const result: ShareResult = {
+      line: race.line,
+      wpm: finalWpm,
+      correctChars: race.correctChars,
+      elapsedMs,
+    }
+    setShareBusy(true)
+    setShareNote(null)
+    try {
+      const dataUrl = await captureShareCardPng(shareCardRef.current)
+      await action(dataUrl, result)
+    } catch {
+      setShareNote('Could not create image — try again')
+    } finally {
+      setShareBusy(false)
+    }
+  }
+
+  function saveShareImage() {
+    void withShareCard(async (dataUrl, result) => {
+      downloadDataUrl(dataUrl, shareFilename(result.line.id, result.wpm))
+      setShareNote('Image saved')
+    })
+  }
+
+  function shareShareImage() {
+    void withShareCard(async (dataUrl, result) => {
+      const outcome = await shareResultImage(
+        result,
+        dataUrl,
+        shareFilename(result.line.id, result.wpm),
+      )
+      setShareNote(outcome === 'shared' ? 'Shared' : 'Image saved')
+    })
+  }
+
   const currentStation = race?.line.stations[race.stationIndex] ?? ''
   const nextStation =
     race && race.stationIndex + 1 < race.line.stations.length
       ? race.line.stations[race.stationIndex + 1]!
       : null
 
-  const matched = race ? matchPrefix(currentStation, race.input) : 0
-  const typedLength = race?.input.length ?? 0
-
   const liveElapsed =
     race?.startedAt && phase === 'racing' ? Math.max(now - race.startedAt, 1) : 0
   const liveCorrect =
-    (race?.correctChars ?? 0) + (phase === 'racing' ? matched : 0)
+    (race?.correctChars ?? 0) +
+    (phase === 'racing' && race
+      ? countCorrectChars(currentStation, race.input)
+      : 0)
   const liveWpm = calcWpm(liveCorrect, liveElapsed)
   const progress =
     race && race.line.stations.length > 0
@@ -187,6 +241,16 @@ export default function App() {
       : 0
 
   const isSliding = slide !== null
+
+  const shareResult: ShareResult | null =
+    race && phase === 'finished'
+      ? {
+          line: race.line,
+          wpm: finalWpm,
+          correctChars: race.correctChars,
+          elapsedMs,
+        }
+      : null
 
   return (
     <div className="app" data-phase={phase}>
@@ -255,11 +319,7 @@ export default function App() {
                 aria-hidden="true"
               >
                 <p className="prompt-word">
-                  <StationChars
-                    word={slide.outgoing}
-                    matched={slide.outgoing.length}
-                    typedLength={slide.outgoing.length}
-                  />
+                  <StationChars word={slide.outgoing} typed={slide.outgoing} />
                 </p>
               </div>
             )}
@@ -274,11 +334,7 @@ export default function App() {
                 .join(' ')}
             >
               <p className="prompt-word">
-                <StationChars
-                  word={currentStation}
-                  matched={matched}
-                  typedLength={typedLength}
-                />
+                <StationChars word={currentStation} typed={race.input} />
               </p>
             </div>
             {nextStation && !isSliding && (
@@ -306,21 +362,41 @@ export default function App() {
         </section>
       )}
 
-      {phase === 'finished' && race && (
+      {phase === 'finished' && race && shareResult && (
         <section className="results" style={lineStyle(race.line.color)}>
-          <p className="results-kicker">Line cleared</p>
+          <p className="results-kicker">Line cleared — share your run</p>
           <h2 className="results-brand">StationTypeRace</h2>
-          <p className="results-line">
-            <span className="line-dot" />
-            {race.line.name}
-          </p>
-          <p className="results-wpm-label">Average WPM</p>
-          <p className="results-wpm">{formatWpm(finalWpm)}</p>
-          <p className="results-detail">
-            {race.line.stations.length} stations · {race.correctChars} characters
-          </p>
+
+          <div className="share-card-frame">
+            <ShareCard ref={shareCardRef} result={shareResult} />
+          </div>
+
+          <div className="cta-row share-actions">
+            <button
+              type="button"
+              className="btn primary"
+              onClick={saveShareImage}
+              disabled={shareBusy}
+            >
+              {shareBusy ? 'Preparing…' : 'Save image'}
+            </button>
+            <button
+              type="button"
+              className="btn neon"
+              onClick={shareShareImage}
+              disabled={shareBusy}
+            >
+              Share
+            </button>
+          </div>
+          {shareNote && (
+            <p className="share-note" role="status">
+              {shareNote}
+            </p>
+          )}
+
           <div className="cta-row">
-            <button type="button" className="btn primary" onClick={startRace}>
+            <button type="button" className="btn ghost" onClick={startRace}>
               Next random line
             </button>
             <button
