@@ -130,9 +130,14 @@ export default function App() {
   const [shareNote, setShareNote] = useState<string | null>(null)
   const [shareVariant, setShareVariant] = useState<ShareCardVariant>('neon')
   const [landmarkId, setLandmarkId] = useState<LandmarkId | null>(null)
+  /** Blocks mobile Contact/Autofill heuristics until the field is activated. */
+  const [autofillGuard, setAutofillGuard] = useState(true)
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const shareCardRef = useRef<HTMLDivElement>(null)
   const slideTimer = useRef<number | null>(null)
+  /** Layout height before the soft keyboard — used to detect kb open on mobile. */
+  const raceViewportBaseline = useRef<number | null>(null)
   /** Sync mirrors — Space/input can race; closures alone drop stationSamples. */
   const raceRef = useRef<RaceState | null>(null)
   const phaseRef = useRef<Phase>('idle')
@@ -154,8 +159,85 @@ export default function App() {
   }, [phase])
 
   useEffect(() => {
-    if (phase === 'racing') inputRef.current?.focus()
-  }, [phase, race?.stationIndex])
+    if (phase !== 'racing') return
+    // Phones: stay readOnly until a real tap so Contact/Autofill never classifies
+    // an editable name-like field on autofocus. Desktop: unlock and focus now.
+    const coarse =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(pointer: coarse)').matches
+    if (coarse) {
+      setAutofillGuard(true)
+      return
+    }
+    setAutofillGuard(false)
+    const id = window.requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true })
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [phase])
+
+  useEffect(() => {
+    if (phase !== 'racing' || autofillGuard) return
+    inputRef.current?.focus({ preventScroll: true })
+  }, [phase, race?.stationIndex, autofillGuard])
+
+  /** Keep the fixed line map + type dock above the soft keyboard. */
+  useEffect(() => {
+    if (phase !== 'racing') {
+      document.documentElement.style.removeProperty('--kb-inset')
+      raceViewportBaseline.current = null
+      setKeyboardOpen(false)
+      return
+    }
+
+    const root = document.documentElement
+    // Capture pre-keyboard layout height once per race (before first focus).
+    if (raceViewportBaseline.current === null) {
+      raceViewportBaseline.current = window.innerHeight
+    }
+
+    const syncKeyboardInset = () => {
+      const vv = window.visualViewport
+      const baseline = raceViewportBaseline.current ?? window.innerHeight
+      // Overlay keyboards (iOS): gap between layout viewport and visual viewport.
+      const overlayInset = vv
+        ? Math.max(0, window.innerHeight - (vv.height + vv.offsetTop))
+        : 0
+      // resizes-content (Android Chrome): layout height shrinks — do NOT add that
+      // into --kb-inset or fixed bottom docks jump to the top of the screen.
+      const resizedInset = Math.max(0, baseline - window.innerHeight)
+      root.style.setProperty('--kb-inset', `${Math.round(overlayInset)}px`)
+      setKeyboardOpen(overlayInset > 120 || resizedInset > 120)
+    }
+
+    syncKeyboardInset()
+    const vv = window.visualViewport
+    vv?.addEventListener('resize', syncKeyboardInset)
+    vv?.addEventListener('scroll', syncKeyboardInset)
+    window.addEventListener('resize', syncKeyboardInset)
+    return () => {
+      vv?.removeEventListener('resize', syncKeyboardInset)
+      vv?.removeEventListener('scroll', syncKeyboardInset)
+      window.removeEventListener('resize', syncKeyboardInset)
+      root.style.removeProperty('--kb-inset')
+      setKeyboardOpen(false)
+    }
+  }, [phase])
+
+  function unlockPromptField(el?: HTMLInputElement | null) {
+    if (el) el.readOnly = false
+    setAutofillGuard(false)
+    window.requestAnimationFrame(() => {
+      el?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' })
+    })
+  }
+
+  /** When the keyboard docks the type field, keep the station prompt above it. */
+  useEffect(() => {
+    if (phase !== 'racing' || !keyboardOpen) return
+    const stage = document.querySelector('.station-stage')
+    stage?.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'smooth' })
+  }, [phase, keyboardOpen, race?.stationIndex])
 
   useEffect(() => {
     return () => {
@@ -513,7 +595,11 @@ export default function App() {
   const finishedRoute = race ? splitRoute(race.line.route) : null
 
   return (
-    <div className="app" data-phase={phase}>
+    <div
+      className="app"
+      data-phase={phase}
+      data-kb={phase === 'racing' && keyboardOpen ? 'open' : 'closed'}
+    >
       <DroneBackdrop
         mode={phase === 'idle' ? 'orbit' : 'zoom'}
         landmarkId={landmarkId}
@@ -698,59 +784,95 @@ export default function App() {
               )}
             </div>
 
-            <label className="sr-only" htmlFor="station-input">
-              Type the station shown above
-            </label>
-            <input
-              id="station-input"
-              ref={inputRef}
-              className="station-input"
-              type="text"
-              name="str-race-prompt"
-              value={race.input}
-              onChange={(e) => onInputChange(e.target.value)}
-              onBeforeInput={onStationBeforeInput}
-              onKeyDown={onStationKeyDown}
-              // Mobile Safari/Chrome ignore "off" and classify this as a name
-              // field (label used to say "Station name"). Non-contact token +
-              // password-manager ignores keep the typing race free of Autofill.
-              autoComplete="one-time-code"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck={false}
-              inputMode="text"
-              enterKeyHint="next"
-              data-lpignore="true"
-              data-1p-ignore="true"
-              data-form-type="other"
-              data-bwignore="true"
-              placeholder={
-                stationComplete
-                  ? isLastStation
-                    ? stationPerfect
-                      ? 'Finishing…'
-                      : 'Space or Enter to finish…'
-                    : 'Space to continue…'
-                  : 'Start typing…'
-              }
-            />
-            {stationComplete && !(isLastStation && stationPerfect) && (
-              <p className="space-hint" role="status">
-                {isLastStation ? (
-                  <>
-                    <kbd className="key-hint">Space</kbd>
-                    {' or '}
-                    <kbd className="key-hint">Enter</kbd>
-                    {' finish line'}
-                  </>
-                ) : (
-                  <>
-                    <kbd className="key-hint">Space</kbd>
-                    {' next station'}
-                  </>
-                )}
-              </p>
-            )}
+            <div className="race-type-dock">
+              <form
+                className="station-type-form"
+                autoComplete="off"
+                onSubmit={(e) => e.preventDefault()}
+              >
+                {/*
+                  Safari Contact AutoFill + Android Autofill classify bare text
+                  inputs as name/address fields. one-time-code still invites the
+                  Autofill chrome. Decoy name/email fields absorb heuristics;
+                  the real prompt stays autocomplete=off + readOnly until focus.
+                */}
+                <div className="autofill-decoy" aria-hidden="true">
+                  <input
+                    type="text"
+                    name="name"
+                    autoComplete="name"
+                    tabIndex={-1}
+                    defaultValue=""
+                    readOnly
+                  />
+                  <input
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    tabIndex={-1}
+                    defaultValue=""
+                    readOnly
+                  />
+                </div>
+                <label className="sr-only" htmlFor="station-input">
+                  Type the stop shown above
+                </label>
+                <input
+                  id="station-input"
+                  ref={inputRef}
+                  className="station-input"
+                  type="search"
+                  name="str-x7k2-prompt"
+                  value={race.input}
+                  readOnly={autofillGuard}
+                  onChange={(e) => onInputChange(e.target.value)}
+                  onBeforeInput={onStationBeforeInput}
+                  onKeyDown={onStationKeyDown}
+                  onPointerDown={(e) => unlockPromptField(e.currentTarget)}
+                  // Do not unlock on focus alone — programmatic focus must stay readOnly
+                  // on phones or Safari Contact AutoFill still attaches.
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  inputMode="text"
+                  enterKeyHint="next"
+                  aria-autocomplete="none"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
+                  data-bwignore="true"
+                  placeholder={
+                    stationComplete
+                      ? isLastStation
+                        ? stationPerfect
+                          ? 'Finishing…'
+                          : 'Space or Enter to finish…'
+                        : 'Space to continue…'
+                      : autofillGuard
+                        ? 'Tap to type…'
+                        : 'Start typing…'
+                  }
+                />
+              </form>
+              {stationComplete && !(isLastStation && stationPerfect) && (
+                <p className="space-hint" role="status">
+                  {isLastStation ? (
+                    <>
+                      <kbd className="key-hint">Space</kbd>
+                      {' or '}
+                      <kbd className="key-hint">Enter</kbd>
+                      {' finish line'}
+                    </>
+                  ) : (
+                    <>
+                      <kbd className="key-hint">Space</kbd>
+                      {' next station'}
+                    </>
+                  )}
+                </p>
+              )}
+            </div>
           </section>
 
           <StationProgressRail
