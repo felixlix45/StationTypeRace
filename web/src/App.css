@@ -4295,7 +4295,8 @@ input {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
+    /* Keep prompt + input + map clustered at the top of the visible area. */
+    justify-content: flex-start;
     padding-top: max(0.35rem, env(safe-area-inset-top, 0px));
     padding-inline: max(0.65rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
     padding-bottom: 0;
@@ -4341,10 +4342,10 @@ input {
   }
 
   .app[data-phase='racing'][data-kb='open'] .race {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    justify-content: flex-start;
     min-height: 0;
     width: 100%;
     max-width: 100%;
@@ -4822,8 +4823,8 @@ input {
   }
 
   .app[data-phase='racing'][data-kb='open'] {
-    /* Compact landscape: still pack prompt+input+rail in the visual viewport */
-    justify-content: flex-end;
+    /* Compact landscape: keep prompt+input+rail at the top of the visual viewport */
+    justify-content: flex-start;
   }
 
   .race {

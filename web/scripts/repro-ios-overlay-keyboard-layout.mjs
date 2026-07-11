@@ -126,6 +126,8 @@ const layout = await page.evaluate(() => {
     inputInView: ir.bottom > visibleTop + 4 && ir.top < visibleBottom - 4,
     inputAboveRail: ir.bottom <= rr.top + 10,
     inputBelowPrompt: ir.top >= pr.bottom - 2,
+    // Cluster should sit near the top of the visual viewport (not packed to the keyboard).
+    clusterNearTop: pr.top - visibleTop <= 120,
   }
 })
 
@@ -138,7 +140,8 @@ const ok =
   layout.inputBelowPrompt &&
   layout.inputAboveRail &&
   layout.gap >= 0 &&
-  layout.gap <= 160
+  layout.gap <= 160 &&
+  layout.clusterNearTop
 
 if (!ok) {
   console.error('RED: iOS overlay keyboard splits prompt and input')
