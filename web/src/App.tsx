@@ -43,29 +43,26 @@ function createRace(): RaceState {
   }
 }
 
-function matchPrefix(target: string, typed: string): number {
+/** Count characters that match the target at the same index (mistakes do not block later hits). */
+function countCorrectChars(target: string, typed: string): number {
   const t = target.toLowerCase()
   const s = typed.toLowerCase()
-  let i = 0
-  while (i < s.length && i < t.length && s[i] === t[i]) i += 1
-  return i
+  const len = Math.min(s.length, t.length)
+  let n = 0
+  for (let i = 0; i < len; i += 1) {
+    if (s[i] === t[i]) n += 1
+  }
+  return n
 }
 
-function StationChars({
-  word,
-  matched,
-  typedLength,
-}: {
-  word: string
-  matched: number
-  typedLength: number
-}) {
+function StationChars({ word, typed }: { word: string; typed: string }) {
+  const t = typed.toLowerCase()
+  const w = word.toLowerCase()
   return (
     <>
       {word.split('').map((char, i) => {
         let cls = 'pending'
-        if (i < matched) cls = 'ok'
-        else if (i < typedLength) cls = 'bad'
+        if (i < typed.length) cls = t[i] === w[i] ? 'ok' : 'bad'
         return (
           <span key={`${i}-${char}`} className={cls}>
             {char === ' ' ? '\u00a0' : char}
@@ -152,7 +149,8 @@ export default function App() {
     // Allow wrong characters; only cap at the station name length
     const nextInput = value.slice(0, target.length)
 
-    const completed = nextInput.toLowerCase() === target.toLowerCase()
+    // Advance when the full name is typed — mistakes do not block later correct chars
+    const completed = nextInput.length === target.length
 
     if (!completed) {
       setRace({
@@ -163,7 +161,7 @@ export default function App() {
       return
     }
 
-    const nextCorrect = race.correctChars + target.length
+    const nextCorrect = race.correctChars + countCorrectChars(target, nextInput)
     const nextIndex = race.stationIndex + 1
     const nextState: RaceState = {
       ...race,
@@ -229,13 +227,13 @@ export default function App() {
       ? race.line.stations[race.stationIndex + 1]!
       : null
 
-  const matched = race ? matchPrefix(currentStation, race.input) : 0
-  const typedLength = race?.input.length ?? 0
-
   const liveElapsed =
     race?.startedAt && phase === 'racing' ? Math.max(now - race.startedAt, 1) : 0
   const liveCorrect =
-    (race?.correctChars ?? 0) + (phase === 'racing' ? matched : 0)
+    (race?.correctChars ?? 0) +
+    (phase === 'racing' && race
+      ? countCorrectChars(currentStation, race.input)
+      : 0)
   const liveWpm = calcWpm(liveCorrect, liveElapsed)
   const progress =
     race && race.line.stations.length > 0
@@ -321,11 +319,7 @@ export default function App() {
                 aria-hidden="true"
               >
                 <p className="prompt-word">
-                  <StationChars
-                    word={slide.outgoing}
-                    matched={slide.outgoing.length}
-                    typedLength={slide.outgoing.length}
-                  />
+                  <StationChars word={slide.outgoing} typed={slide.outgoing} />
                 </p>
               </div>
             )}
@@ -340,11 +334,7 @@ export default function App() {
                 .join(' ')}
             >
               <p className="prompt-word">
-                <StationChars
-                  word={currentStation}
-                  matched={matched}
-                  typedLength={typedLength}
-                />
+                <StationChars word={currentStation} typed={race.input} />
               </p>
             </div>
             {nextStation && !isSliding && (
