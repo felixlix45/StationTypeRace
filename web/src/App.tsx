@@ -395,7 +395,18 @@ export default function App() {
     const nowTs = Date.now()
     const startedAt = current.startedAt ?? nowTs
     const stationStartedAt = current.stationStartedAt ?? nowTs
-    const nextInput = value.slice(0, target.length)
+
+    // Safety net when beforeinput is non-cancelable (some Android IMEs):
+    // suggestion / swipe / paste can dump many chars in one change — keep at
+    // most one new character so the race stays keystroke-by-keystroke.
+    let accepted = value
+    if (accepted.length > prev.length + 1) {
+      const prefixOk = accepted.startsWith(prev)
+      accepted = prefixOk
+        ? prev + accepted.slice(prev.length, prev.length + 1)
+        : prev
+    }
+    const nextInput = accepted.slice(0, target.length)
 
     let correctKeystrokes = current.correctKeystrokes
     let incorrectKeystrokes = current.incorrectKeystrokes
@@ -431,29 +442,79 @@ export default function App() {
     }
 
     commitRace(updated)
+    // IME may have already written bulk text into the DOM before React commits.
+    if (inputRef.current && inputRef.current.value !== nextInput) {
+      inputRef.current.value = nextInput
+    }
   }
 
-  /** Soft-keyboard Space/Enter — beforeinput fires when keydown often does not. */
-  function onStationBeforeInput(e: FormEvent<HTMLInputElement>) {
+  /**
+   * Native `beforeinput` (not React's onBeforeInput — that maps to keypress/paste
+   * only). Blocks suggestion-strip / swipe / paste commits; advances on Space.
+   */
+  const nativeBeforeInputGuardRef = useRef<(e: InputEvent) => void>(() => {})
+  nativeBeforeInputGuardRef.current = (e: InputEvent) => {
+    if (phaseRef.current !== 'racing' || !raceRef.current) return
+
+    const inputType = e.inputType
+    const data = e.data ?? ''
+
+    if (
+      inputType === 'insertReplacementText' ||
+      inputType === 'insertFromPaste' ||
+      inputType === 'insertFromDrop' ||
+      inputType === 'insertFromYank' ||
+      inputType === 'insertTranspose'
+    ) {
+      e.preventDefault()
+      return
+    }
+
+    // Swipe-typing / suggestion commit: multi-char insert in one event.
+    if (
+      (inputType === 'insertText' || inputType === 'insertCompositionText') &&
+      data.length > 1
+    ) {
+      e.preventDefault()
+      return
+    }
+
     const current = raceRef.current
-    if (!current || phaseRef.current !== 'racing') return
-
     const target = current.line.stations[current.stationIndex]!
-    const canAdvance = current.input.length === target.length
-    if (!canAdvance) return
+    if (current.input.length !== target.length) return
 
-    const ne = e.nativeEvent as InputEvent
-    const insertingSpace =
-      ne.inputType === 'insertText' && ne.data === ' '
+    const insertingSpace = inputType === 'insertText' && data === ' '
     const insertingBreak =
-      ne.inputType === 'insertLineBreak' ||
-      ne.inputType === 'insertParagraph'
+      inputType === 'insertLineBreak' || inputType === 'insertParagraph'
     const isLast =
       current.stationIndex === current.line.stations.length - 1
 
     if (insertingSpace || (insertingBreak && isLast)) {
       e.preventDefault()
       advanceStation()
+    }
+  }
+
+  useEffect(() => {
+    if (phase !== 'racing') return
+    const el = inputRef.current
+    if (!el) return
+    const listener = (e: Event) =>
+      nativeBeforeInputGuardRef.current(e as InputEvent)
+    el.addEventListener('beforeinput', listener)
+    return () => el.removeEventListener('beforeinput', listener)
+  }, [phase])
+
+  /** React onBeforeInput — covers paste (and legacy keypress) paths. */
+  function onStationBeforeInput(e: FormEvent<HTMLInputElement>) {
+    const ne = e.nativeEvent
+    if (ne instanceof InputEvent) {
+      nativeBeforeInputGuardRef.current(ne)
+      return
+    }
+    // React maps paste → onBeforeInput with a ClipboardEvent.
+    if (ne instanceof ClipboardEvent || ne.type === 'paste') {
+      e.preventDefault()
     }
   }
 
@@ -827,14 +888,19 @@ export default function App() {
                   readOnly={autofillGuard}
                   onChange={(e) => onInputChange(e.target.value)}
                   onBeforeInput={onStationBeforeInput}
+                  onPaste={(e) => e.preventDefault()}
+                  onDrop={(e) => e.preventDefault()}
                   onKeyDown={onStationKeyDown}
                   onPointerDown={(e) => unlockPromptField(e.currentTarget)}
                   // Do not unlock on focus alone — programmatic focus must stay readOnly
                   // on phones or Safari Contact AutoFill still attaches.
                   autoComplete="off"
                   autoCorrect="off"
-                  autoCapitalize="off"
+                  autoCapitalize="none"
                   spellCheck={false}
+                  // Hint keyboards to skip predictive strip / writing AI.
+                  // Enforcement is in onStationBeforeInput + onInputChange.
+                  {...{ writingsuggestions: 'false' }}
                   inputMode="text"
                   enterKeyHint="next"
                   aria-autocomplete="none"
@@ -948,12 +1014,14 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="share-card-frame">
-                <ShareCard
-                  ref={shareCardRef}
-                  result={shareResult}
-                  variant={shareVariant}
-                />
+              <div className="share-card-frame-scale">
+                <div className="share-card-frame">
+                  <ShareCard
+                    ref={shareCardRef}
+                    result={shareResult}
+                    variant={shareVariant}
+                  />
+                </div>
               </div>
 
               <div className="cta-row share-actions">

@@ -72,27 +72,127 @@ export function shareCaption(result: ShareResult): string {
   return `Cleared ${result.line.name} at ${result.wpm} WPM (${result.accuracy}% acc) on ${formatRaceDevice(result.device)} · StationTypeRace`
 }
 
-async function waitForFonts(): Promise<void> {
-  if (typeof document !== 'undefined' && document.fonts?.ready) {
-    await document.fonts.ready
+/** Canonical on-screen + export CSS width (cqw typography is keyed to this). */
+export const SHARE_DESIGN_WIDTH = 280
+/** 9:16 Instagram Stories portrait */
+export const SHARE_DESIGN_HEIGHT = Math.round((SHARE_DESIGN_WIDTH * 16) / 9)
+/** Final PNG pixel width */
+const STORY_WIDTH = 1080
+const SHARE_PIXEL_RATIO = STORY_WIDTH / SHARE_DESIGN_WIDTH
+
+async function waitForShareFonts(): Promise<void> {
+  if (typeof document === 'undefined' || !document.fonts) return
+  await document.fonts.ready
+  // Force-load weights used on the card so mobile Safari embeds them in the PNG.
+  await Promise.all([
+    document.fonts.load('600 64px Syne'),
+    document.fonts.load('700 64px Syne'),
+    document.fonts.load('800 64px Syne'),
+    document.fonts.load('400 32px "JetBrains Mono"'),
+    document.fonts.load('600 32px "JetBrains Mono"'),
+    document.fonts.load('700 32px "JetBrains Mono"'),
+  ]).catch(() => {
+    /* keep going — system fallback is better than failing the share */
+  })
+}
+
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  })
+}
+
+type InlineStyleSnapshot = {
+  width: string
+  height: string
+  maxWidth: string
+  minWidth: string
+  transform: string
+}
+
+function snapshotInline(el: HTMLElement): InlineStyleSnapshot {
+  return {
+    width: el.style.width,
+    height: el.style.height,
+    maxWidth: el.style.maxWidth,
+    minWidth: el.style.minWidth,
+    transform: el.style.transform,
   }
 }
 
-/** Instagram Stories / Reels portrait export width (height follows 9:16) */
-const STORY_WIDTH = 1080
+function restoreInline(el: HTMLElement, snap: InlineStyleSnapshot) {
+  el.style.width = snap.width
+  el.style.height = snap.height
+  el.style.maxWidth = snap.maxWidth
+  el.style.minWidth = snap.minWidth
+  el.style.transform = snap.transform
+}
 
+/**
+ * Capture the share card at a fixed CSS design size so mobile/desktop PNGs
+ * share the same cqw typography and padding (preview width must not leak in).
+ */
 export async function captureShareCardPng(
   node: HTMLElement,
 ): Promise<string> {
-  await waitForFonts()
-  const width = Math.max(node.offsetWidth, 1)
-  const pixelRatio = Math.min(4, Math.max(2, STORY_WIDTH / width))
+  await waitForShareFonts()
 
-  return toPng(node, {
-    cacheBust: true,
-    pixelRatio,
-    backgroundColor: '#050b12',
-  })
+  const frame = node.closest('.share-card-frame') as HTMLElement | null
+  const nodeSnap = snapshotInline(node)
+  const frameSnap = frame ? snapshotInline(frame) : null
+
+  // Pin layout to the canonical design box (same as desktop preview).
+  if (frame) {
+    frame.style.width = `${SHARE_DESIGN_WIDTH}px`
+    frame.style.maxWidth = `${SHARE_DESIGN_WIDTH}px`
+    frame.style.minWidth = `${SHARE_DESIGN_WIDTH}px`
+    frame.style.transform = 'none'
+  }
+  node.style.width = `${SHARE_DESIGN_WIDTH}px`
+  node.style.maxWidth = `${SHARE_DESIGN_WIDTH}px`
+  node.style.minWidth = `${SHARE_DESIGN_WIDTH}px`
+  node.style.height = `${SHARE_DESIGN_HEIGHT}px`
+  node.style.transform = 'none'
+
+  try {
+    // Settle container queries + React layout effects (pixel chip fitting).
+    await nextFrame()
+    await new Promise((r) => window.setTimeout(r, 64))
+    await nextFrame()
+
+    const options = {
+      cacheBust: true,
+      // One scaling path only — combining pixelRatio with canvasWidth multiplies
+      // again on mobile WebKit/Chrome and produces ~4k PNGs.
+      pixelRatio: SHARE_PIXEL_RATIO,
+      width: SHARE_DESIGN_WIDTH,
+      height: SHARE_DESIGN_HEIGHT,
+      backgroundColor: '#050b12',
+      preferredFontFormat: 'woff2' as const,
+      style: {
+        width: `${SHARE_DESIGN_WIDTH}px`,
+        height: `${SHARE_DESIGN_HEIGHT}px`,
+        maxWidth: `${SHARE_DESIGN_WIDTH}px`,
+        minWidth: `${SHARE_DESIGN_WIDTH}px`,
+        transform: 'none',
+        margin: '0',
+        // Avoid iOS Safari shrinking the clone with page zoom / text size.
+        zoom: '1',
+      },
+    }
+
+    try {
+      return await toPng(node, options)
+    } catch {
+      // Mobile WebKit sometimes fails the first font-embed pass — retry once.
+      await waitForShareFonts()
+      await nextFrame()
+      return await toPng(node, options)
+    }
+  } finally {
+    restoreInline(node, nodeSnap)
+    if (frame && frameSnap) restoreInline(frame, frameSnap)
+  }
 }
 
 export function downloadDataUrl(dataUrl: string, filename: string) {
