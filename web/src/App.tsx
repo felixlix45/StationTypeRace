@@ -807,57 +807,59 @@ export default function App() {
               {race.line.stations.length}
             </p>
 
-            <p className="prompt-label">
-              {stationComplete
-                ? nextStation
-                  ? 'Press Space for next station'
-                  : stationPerfect
-                    ? 'Finishing…'
-                    : 'Press Space or Enter to finish'
-                : 'Type this station'}
-            </p>
+            <div className="station-prompt-panel">
+              <p className="prompt-label">
+                {stationComplete
+                  ? nextStation
+                    ? 'Press Space for next station'
+                    : stationPerfect
+                      ? 'Finishing…'
+                      : 'Press Space or Enter to finish'
+                  : 'Type this station'}
+              </p>
 
-            <div
-              className={['station-stage', isSliding ? 'is-sliding' : '']
-                .filter(Boolean)
-                .join(' ')}
-              aria-live="polite"
-            >
-              {slide && (
-                <div
-                  key={`out-${slide.key}`}
-                  className="station-slide is-outgoing"
-                  aria-hidden="true"
-                >
-                  <p className="prompt-word">
-                    <StationChars word={slide.outgoing} typed={slide.outgoing} />
-                  </p>
-                </div>
-              )}
               <div
-                key={`cur-${race.stationIndex}`}
-                className={[
-                  'station-slide',
-                  'is-current',
-                  isSliding ? 'is-entering' : '',
-                  stationComplete ? 'is-ready' : '',
-                ]
+                className={['station-stage', isSliding ? 'is-sliding' : '']
                   .filter(Boolean)
                   .join(' ')}
+                aria-live="polite"
               >
-                <p className="prompt-word">
-                  <StationChars word={currentStation} typed={race.input} />
-                </p>
-              </div>
-              {nextStation && (
+                {slide && (
+                  <div
+                    key={`out-${slide.key}`}
+                    className="station-slide is-outgoing"
+                    aria-hidden="true"
+                  >
+                    <p className="prompt-word">
+                      <StationChars word={slide.outgoing} typed={slide.outgoing} />
+                    </p>
+                  </div>
+                )}
                 <div
-                  key={`next-${race.stationIndex}`}
-                  className="station-slide is-next"
-                  aria-hidden="true"
+                  key={`cur-${race.stationIndex}`}
+                  className={[
+                    'station-slide',
+                    'is-current',
+                    isSliding ? 'is-entering' : '',
+                    stationComplete ? 'is-ready' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                 >
-                  <p className="prompt-word preview">{nextStation}</p>
+                  <p className="prompt-word">
+                    <StationChars word={currentStation} typed={race.input} />
+                  </p>
                 </div>
-              )}
+                {nextStation && (
+                  <div
+                    key={`next-${race.stationIndex}`}
+                    className="station-slide is-next"
+                    aria-hidden="true"
+                  >
+                    <p className="prompt-word preview">{nextStation}</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="race-type-dock">

@@ -1402,6 +1402,11 @@ input {
   text-shadow: 0 1px 4px color-mix(in srgb, var(--ink) 90%, transparent);
 }
 
+/* Desktop / kb-closed: wrapper is transparent — .race keeps the plate. */
+.station-prompt-panel {
+  display: contents;
+}
+
 .station-stage {
   --slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --current-y: 30%;
@@ -4272,9 +4277,9 @@ input {
   }
 
   /*
-   * Soft keyboard open (iOS overlay + Android resize): pin the race shell to the
-   * visual viewport. Station prompt stays at the top; input + line map sit just
-   * above the keyboard with breathing room in between.
+   * Soft keyboard open: match Android production layout —
+   * compact station card at top, clear backdrop gap, input + line map
+   * docked together just above the keyboard.
    */
   .app[data-phase='racing'][data-kb='open'] {
     --race-dock-height: 0px;
@@ -4294,7 +4299,7 @@ input {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding-top: max(0.35rem, env(safe-area-inset-top, 0px));
+    padding-top: max(0.55rem, env(safe-area-inset-top, 0px));
     padding-inline: max(0.65rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
     padding-bottom: 0;
   }
@@ -4307,14 +4312,14 @@ input {
     z-index: auto;
     box-sizing: border-box;
     width: 100%;
-    margin: 0.35rem 0 0;
-    padding: 0;
+    margin: 0;
+    padding: 0.15rem 0.15rem 0.1rem;
     background: none;
     pointer-events: auto;
   }
 
   .app[data-phase='racing'][data-kb='open'] .race-type-dock .station-input {
-    background: color-mix(in srgb, var(--ink) 72%, transparent);
+    background: color-mix(in srgb, var(--ink) 55%, transparent);
   }
 
   .app[data-phase='racing'][data-kb='open'] .race-type-dock .space-hint {
@@ -4338,6 +4343,7 @@ input {
     display: none;
   }
 
+  /* Transparent shell so the landmark shows between prompt card and dock. */
   .app[data-phase='racing'][data-kb='open'] .race {
     flex: 1 1 auto;
     display: flex;
@@ -4347,20 +4353,62 @@ input {
     width: 100%;
     max-width: 100%;
     margin: 0;
-    padding-top: 0.35rem;
-    padding-bottom: 0.25rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .app[data-phase='racing'][data-kb='open'] .race::before {
+    display: none;
+  }
+
+  /* Compact top station card (Android-style plate, prompt only). */
+  .app[data-phase='racing'][data-kb='open'] .station-prompt-panel {
+    position: relative;
+    display: block;
+    flex: 0 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 auto;
+    padding: 0.7rem 0.85rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--line) 28%, transparent);
+    border-radius: 0.2rem;
+    background:
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--ink) 82%, transparent) 0%,
+        color-mix(in srgb, var(--ink-2) 88%, transparent) 55%,
+        color-mix(in srgb, var(--ink) 90%, transparent) 100%
+      );
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--ink) 55%, transparent),
+      0 12px 28px color-mix(in srgb, var(--ink) 50%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--paper) 7%, transparent);
+  }
+
+  .app[data-phase='racing'][data-kb='open'] .station-prompt-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    pointer-events: none;
   }
 
   .app[data-phase='racing'][data-kb='open'] .prompt-label {
-    margin-top: 0;
-    margin-bottom: 0.25rem;
+    margin: 0 0 0.35rem;
   }
 
   .app[data-phase='racing'][data-kb='open'] .station-stage {
-    height: auto;
-    min-height: 2.5rem;
-    /* Push the type dock (and then the line map) down to the keyboard. */
-    margin: 0 0 auto;
+    height: clamp(4.25rem, 22vw, 5.5rem);
+    min-height: 4.25rem;
+    margin: 0;
+    --current-y: 34%;
+    --next-y: 82%;
+    --rise-gap: 1.65rem;
   }
 
   .app[data-phase='idle'] .hero {
