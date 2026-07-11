@@ -23,25 +23,7 @@ npm run dev
 
 ## Deploy to Cloudflare
 
-The app is a static Vite SPA. It deploys with **Cloudflare Workers static assets** via Wrangler (`web/wrangler.jsonc`).
-
-### One-time setup
-
-1. Create a [Cloudflare API token](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/) with **Edit Cloudflare Workers** permission.
-2. Note your [Account ID](https://developers.cloudflare.com/fundamentals/setup/find-account-and-zone-ids/).
-3. Log in locally (or set secrets for CI):
-
-```bash
-cd web
-npx wrangler login
-```
-
-For GitHub Actions, add repository secrets:
-
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
-
-Pushes to `main` run [`.github/workflows/deploy-cloudflare.yml`](.github/workflows/deploy-cloudflare.yml).
+The app is a static Vite SPA. It deploys with **Cloudflare Workers static assets** via Wrangler (`web/wrangler.jsonc`). Pushes to `main` run [`.github/workflows/deploy-cloudflare.yml`](.github/workflows/deploy-cloudflare.yml).
 
 ### Deploy from your machine
 
