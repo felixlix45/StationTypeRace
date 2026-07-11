@@ -1954,6 +1954,10 @@ input {
   gap: 1.6%;
   text-align: left;
   color: var(--paper);
+  /* Lock mobile Safari from inflating small type (breaks export padding). */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  zoom: 1;
   background:
     radial-gradient(ellipse 90% 42% at 50% -8%, color-mix(in srgb, var(--line) 48%, transparent), transparent 58%),
     radial-gradient(ellipse 50% 35% at 100% 100%, color-mix(in srgb, var(--neon-cyan) 16%, transparent), transparent 52%),
@@ -3413,6 +3417,158 @@ input {
 
 .share-actions {
   margin-top: 1rem;
+}
+
+/*
+ * Offscreen design-size twin for PNG export.
+ * Must stay in a real layout (no transform / filter / opacity:0) so cqw
+ * typography matches the web preview before styles are frozen for capture.
+ */
+.share-capture-host {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 280px;
+  height: 498px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  filter: none;
+  opacity: 1;
+  visibility: visible;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.share-capture-host .share-card {
+  width: 280px;
+  height: 498px;
+  max-width: 280px;
+  min-width: 280px;
+  transform: none;
+  zoom: 1;
+}
+
+/* —— Full card / native screenshot page (`#/share`) —— */
+.share-shot-page {
+  --paper: #f4f7fb;
+  --fog: #9aa8b8;
+  --ink: #050b12;
+  --line: #7ef9ff;
+  --ok: #5dffb0;
+  min-height: 100dvh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  padding: max(0.75rem, env(safe-area-inset-top, 0px))
+    max(0.85rem, env(safe-area-inset-right, 0px))
+    max(0.85rem, env(safe-area-inset-bottom, 0px))
+    max(0.85rem, env(safe-area-inset-left, 0px));
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(126, 249, 255, 0.12), transparent 55%),
+    linear-gradient(165deg, #07131c 0%, #050b12 48%, #0a0614 100%);
+  color: var(--paper);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  box-sizing: border-box;
+}
+
+.share-shot-chrome {
+  width: min(420px, 100%);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+}
+
+.share-shot-back {
+  flex-shrink: 0;
+}
+
+.share-shot-hint {
+  margin: 0;
+  flex: 1 1 10rem;
+  text-align: right;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--fog) 85%, white);
+  line-height: 1.35;
+}
+
+.share-shot-picker {
+  width: min(420px, 100%);
+}
+
+.share-shot-stage {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+}
+
+.share-shot-frame-scale {
+  container-type: inline-size;
+  container-name: share-shot-preview;
+  /* Fill most of the viewport while keeping 9:16 */
+  width: min(420px, 92vw, calc((100dvh - 12rem) * 9 / 16));
+  aspect-ratio: 9 / 16;
+  position: relative;
+  filter: drop-shadow(0 0 32px rgba(126, 249, 255, 0.2));
+}
+
+.share-shot-frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 0;
+  width: 280px;
+  max-width: none;
+  min-width: 280px;
+  transform: scale(calc(100cqw / 280));
+  transform-origin: top left;
+}
+
+.share-shot-actions {
+  width: min(420px, 100%);
+  margin-top: 0;
+}
+
+.share-shot-note {
+  width: min(420px, 100%);
+  text-align: center;
+}
+
+.share-shot-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.share-shot-empty-title {
+  margin: 0;
+  font-family: Syne, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.35rem;
+}
+
+.share-shot-empty-copy {
+  margin: 0 0 0.5rem;
+  max-width: 22rem;
+  color: var(--fog);
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
 .results-nav {

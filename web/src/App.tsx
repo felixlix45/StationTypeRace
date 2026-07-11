@@ -28,6 +28,7 @@ import {
   captureShareCardPng,
   detectRaceDevice,
   downloadDataUrl,
+  openShareScreenshotPage,
   shareFilename,
   shareResultImage,
   type RaceDevice,
@@ -134,7 +135,10 @@ export default function App() {
   const [autofillGuard, setAutofillGuard] = useState(true)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  /** Live preview card (scaled) — not used for PNG capture. */
   const shareCardRef = useRef<HTMLDivElement>(null)
+  /** Offscreen design-size twin — source of truth for Save / Share PNG. */
+  const shareCaptureRef = useRef<HTMLDivElement>(null)
   const slideTimer = useRef<number | null>(null)
   /** Layout height before the soft keyboard — used to detect kb open on mobile. */
   const raceViewportBaseline = useRef<number | null>(null)
@@ -576,7 +580,8 @@ export default function App() {
   async function withShareCard(
     action: (dataUrl: string, result: ShareResult) => Promise<void>,
   ) {
-    if (!race || !shareCardRef.current || shareBusy) return
+    const captureNode = shareCaptureRef.current ?? shareCardRef.current
+    if (!race || !captureNode || shareBusy) return
     const result: ShareResult = {
       line: race.line,
       wpm: finalWpm,
@@ -589,10 +594,10 @@ export default function App() {
     setShareBusy(true)
     setShareNote(null)
     try {
-      const dataUrl = await captureShareCardPng(shareCardRef.current)
+      const dataUrl = await captureShareCardPng(captureNode)
       await action(dataUrl, result)
     } catch {
-      setShareNote('Could not create image — try again')
+      setShareNote('Could not create image — try Full card page')
     } finally {
       setShareBusy(false)
     }
@@ -600,7 +605,8 @@ export default function App() {
 
   function saveShareImage() {
     void withShareCard(async (dataUrl, result) => {
-      downloadDataUrl(dataUrl, shareFilename(result.line.id, result.wpm))
+      const filename = shareFilename(result.line.id, result.wpm, shareVariant)
+      await downloadDataUrl(dataUrl, filename)
       setShareNote('Image saved')
     })
   }
@@ -610,9 +616,25 @@ export default function App() {
       const outcome = await shareResultImage(
         result,
         dataUrl,
-        shareFilename(result.line.id, result.wpm),
+        shareFilename(result.line.id, result.wpm, shareVariant),
       )
       setShareNote(outcome === 'shared' ? 'Shared' : 'Image saved')
+    })
+  }
+
+  function openFullSharePage() {
+    if (!race || phase !== 'finished') return
+    openShareScreenshotPage({
+      result: {
+        line: race.line,
+        wpm: finalWpm,
+        rawWpm: finalRawWpm,
+        accuracy: finalAccuracy,
+        correctChars: race.correctChars,
+        elapsedMs,
+        device: race.device,
+      },
+      variant: shareVariant,
     })
   }
 
@@ -1041,6 +1063,15 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Design-size twin for PNG export — no preview scale / drop-shadow */}
+              <div className="share-capture-host" aria-hidden="true">
+                <ShareCard
+                  ref={shareCaptureRef}
+                  result={shareResult}
+                  variant={shareVariant}
+                />
+              </div>
+
               <div className="cta-row share-actions">
                 <button
                   type="button"
@@ -1057,6 +1088,14 @@ export default function App() {
                   disabled={shareBusy}
                 >
                   Share
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={openFullSharePage}
+                  disabled={shareBusy}
+                >
+                  Full card page
                 </button>
               </div>
               {shareNote && (
