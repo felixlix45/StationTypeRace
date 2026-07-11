@@ -4,6 +4,8 @@ import type { StationLine } from '../data/stations'
 export type ShareResult = {
   line: StationLine
   wpm: number
+  rawWpm: number
+  accuracy: number
   correctChars: number
   elapsedMs: number
 }
@@ -17,7 +19,7 @@ export function formatElapsed(ms: number): string {
 }
 
 export function shareCaption(result: ShareResult): string {
-  return `Cleared ${result.line.name} at ${result.wpm} WPM on StationTypeRace`
+  return `Cleared ${result.line.name} at ${result.wpm} WPM (${result.accuracy}% acc) on StationTypeRace`
 }
 
 async function waitForFonts(): Promise<void> {
@@ -26,14 +28,19 @@ async function waitForFonts(): Promise<void> {
   }
 }
 
+/** Instagram Stories / Reels portrait export width (height follows 9:16) */
+const STORY_WIDTH = 1080
+
 export async function captureShareCardPng(
   node: HTMLElement,
 ): Promise<string> {
   await waitForFonts()
-  // Double-res for crisp social posts
+  const width = Math.max(node.offsetWidth, 1)
+  const pixelRatio = Math.min(4, Math.max(2, STORY_WIDTH / width))
+
   return toPng(node, {
     cacheBust: true,
-    pixelRatio: 2,
+    pixelRatio,
     backgroundColor: '#050b12',
   })
 }
