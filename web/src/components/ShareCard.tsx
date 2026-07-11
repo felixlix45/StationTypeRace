@@ -223,8 +223,56 @@ function RouteClearedBody({ result }: { result: ShareResult }) {
   )
 }
 
+/** Shrink Minimal Type WPM until scrollWidth fits the hero (preview + PNG capture). */
+function fitMinimalWpm(el: HTMLElement) {
+  // Clear prior fit so we measure against the CSS baseline size.
+  el.style.fontSize = ''
+  const hero = el.parentElement
+  if (!hero || hero.clientWidth < 4) return
+  // Syne ExtraBold ink can overhang advance width; keep a real margin for
+  // mobile / html-to-image font embedding variance (prior fix had ~3px).
+  const budget = Math.max(0, hero.clientWidth - 10)
+  let natural = el.scrollWidth
+  try {
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    const ink = range.getBoundingClientRect().width
+    if (ink > 0) natural = Math.max(natural, ink)
+  } catch {
+    /* ignore */
+  }
+  const basePx = parseFloat(getComputedStyle(el).fontSize)
+  if (!Number.isFinite(basePx) || basePx <= 0) return
+  // Always pin px. Capture freeze + ResizeObserver can clear inline font-size
+  // right before html-to-image; without an inline size the FO clone falls back
+  // to clamp(cqw) (broken in foreignObject) and the WPM collapses to the floor.
+  if (natural <= budget) {
+    el.style.fontSize = `${basePx}px`
+    return
+  }
+  el.style.fontSize = `${(basePx * budget) / natural}px`
+}
+
 function MinimalTypeBody({ result }: { result: ShareResult }) {
   const { line, wpm, accuracy } = result
+  const wpmLabel = formatWpm(wpm)
+  const wpmRef = useRef<HTMLParagraphElement>(null)
+  const wpmStyle = {
+    ['--sc-min-wpm-chars' as string]: String(Math.max(2, wpmLabel.length)),
+  } as CSSProperties
+
+  useLayoutEffect(() => {
+    const el = wpmRef.current
+    if (!el) return
+    fitMinimalWpm(el)
+
+    const hero = el.parentElement
+    if (!hero || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => fitMinimalWpm(el))
+    ro.observe(hero)
+    return () => ro.disconnect()
+  }, [wpmLabel])
+
   return (
     <>
       <div className="sc-min-texture" aria-hidden="true" />
@@ -238,7 +286,9 @@ function MinimalTypeBody({ result }: { result: ShareResult }) {
 
       <div className="sc-min-hero">
         <p className="sc-min-label">WPM</p>
-        <p className="sc-min-wpm">{formatWpm(wpm)}</p>
+        <p className="sc-min-wpm" ref={wpmRef} style={wpmStyle}>
+          {wpmLabel}
+        </p>
         <p className="sc-min-acc">{formatAccuracy(accuracy)}</p>
       </div>
 

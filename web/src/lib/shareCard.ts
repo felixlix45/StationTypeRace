@@ -191,6 +191,24 @@ const FREEZE_STYLE_PROPS = [
   'clipPath',
   'maskImage',
   'webkitMaskImage',
+  // SVG paint — html-to-image foreignObject often drops stylesheet
+  // `color-mix()` fills/strokes, which defaults SVG fill to black.
+  'fill',
+  'stroke',
+  'strokeWidth',
+  'strokeOpacity',
+  'fillOpacity',
+  'strokeLinecap',
+  'strokeLinejoin',
+  'strokeDasharray',
+  'strokeDashoffset',
+  'paintOrder',
+  'stopColor',
+  'stopOpacity',
+  'animation',
+  'animationName',
+  'animationDuration',
+  'animationPlayState',
   'zIndex',
   'top',
   'right',
@@ -236,15 +254,295 @@ function camelToKebab(prop: string): string {
 }
 
 /**
+ * html-to-image's SVG foreignObject often drops modern `color(srgb …)` /
+ * `lab()` computed values. Convert to rgb/rgba when we can parse them.
+ */
+function modernColorToRgb(value: string): string {
+  if (!value) return value
+  const srgb = value.match(
+    /color\(\s*srgb\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)(?:\s*\/\s*([0-9.]+))?\s*\)/i,
+  )
+  if (!srgb) return value
+  const r = Math.round(Number(srgb[1]) * 255)
+  const g = Math.round(Number(srgb[2]) * 255)
+  const b = Math.round(Number(srgb[3]) * 255)
+  const a = srgb[4] !== undefined ? Number(srgb[4]) : 1
+  if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) {
+    return value
+  }
+  if (Number.isFinite(a) && a < 1) {
+    return `rgba(${r}, ${g}, ${b}, ${a})`
+  }
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+function normalizeFrozenValue(prop: string, value: string): string {
+  if (
+    prop === 'color' ||
+    prop === 'backgroundColor' ||
+    prop === 'borderTopColor' ||
+    prop === 'borderRightColor' ||
+    prop === 'borderBottomColor' ||
+    prop === 'borderLeftColor' ||
+    prop === 'textDecorationColor' ||
+    prop === 'fill' ||
+    prop === 'stroke' ||
+    prop === 'stopColor'
+  ) {
+    return modernColorToRgb(value)
+  }
+  if (
+    prop === 'textShadow' ||
+    prop === 'boxShadow' ||
+    prop === 'backgroundImage' ||
+    prop === 'filter'
+  ) {
+    return value.replace(
+      /color\(\s*srgb\s+[0-9.]+\s+[0-9.]+\s+[0-9.]+(?:\s*\/\s*[0-9.]+)?\s*\)/gi,
+      (match) => modernColorToRgb(match),
+    )
+  }
+  return value
+}
+
+/**
  * Pin every descendant's computed layout/type to inline px values.
  * html-to-image goes through SVG foreignObject, where `cqw` / container
  * queries and mobile text inflation often diverge from the live preview.
+ *
+ * IMPORTANT: collect every computed value first, then write. Writing
+ * inline widths/flex as we go reflows the tree and can collapse later
+ * siblings (ticket barcode bars → 0px, brand flex → mid-word wrap).
  */
+/** SVG paint attrs that foreignObject clones honor more reliably than CSS alone. */
+const SVG_PAINT_ATTRS = [
+  'fill',
+  'stroke',
+  'stroke-width',
+  'stroke-opacity',
+  'fill-opacity',
+  'stroke-linecap',
+  'stroke-linejoin',
+  'stroke-dasharray',
+  'stroke-dashoffset',
+  'paint-order',
+  'stop-color',
+  'stop-opacity',
+] as const
+
+type FrozenStyleEntry = {
+  node: Element
+  styles: Array<{ kebab: string; value: string; priority: string }>
+  svgPaint: Array<{ attr: string; value: string }> | null
+  clearCssOpacity: boolean
+  /** Extra typography/layout fixes applied after the generic freeze write. */
+  textFix: TextFreezeFix | null
+}
+
+type TextFreezeFix = {
+  fontFamily: string | null
+  fontWeight: string | null
+  fontStyle: string | null
+  fontSize: string | null
+  lineHeight: string | null
+  letterSpacing: string | null
+  /** Keep tabular-nums / OpenType features that `font` shorthand would wipe. */
+  fontVariantNumeric: string | null
+  fontFeatureSettings: string | null
+  fontVariationSettings: string | null
+  fontKerning: string | null
+  /** Soften wrap modes that insert mid-glyph breaks in foreignObject. */
+  overflowWrap: string | null
+  wordBreak: string | null
+  /** list-item / flow-root / -webkit-box repairs for FO. */
+  display: string | null
+  webkitBoxOrient: string | null
+  webkitLineClamp: string | null
+  /** nowrap chips: hug text so FO metric drift can't open word gaps. */
+  width: string | null
+  maxWidth: string | null
+  minWidth: string | null
+  whiteSpace: string | null
+  /** Bake glyphs to an image so FO can't alter letter/word metrics. */
+  rasterizeText: boolean
+}
+
+/**
+ * html-to-image clones via SVG foreignObject and:
+ * 1) rewrites font-size to `floor(px) - 0.1` unless we omit it from clone props
+ * 2) mishandles `overflow-wrap: anywhere` / broken line-clamp boxes
+ * 3) can open word gaps when a nowrap chip keeps a stale width inside a
+ *    flex/grid formatting context while font metrics shift
+ *
+ * Snapshot live metrics first, then apply these FO-safe overrides.
+ *
+ * Do NOT assign `font: unset` — that inlines `font-variant`/`font-kerning`
+ * as `unset` and strips stylesheet `tabular-nums` on big WPM numbers
+ * (Minimal / Monas), changing digit metrics in the PNG.
+ */
+function buildTextFreezeFix(
+  node: Element,
+  cs: CSSStyleDeclaration,
+): TextFreezeFix | null {
+  if (!(node instanceof HTMLElement)) return null
+
+  const fix: TextFreezeFix = {
+    fontFamily: null,
+    fontWeight: null,
+    fontStyle: null,
+    fontSize: null,
+    lineHeight: null,
+    letterSpacing: null,
+    fontVariantNumeric: null,
+    fontFeatureSettings: null,
+    fontVariationSettings: null,
+    fontKerning: null,
+    overflowWrap: null,
+    wordBreak: null,
+    display: null,
+    webkitBoxOrient: null,
+    webkitLineClamp: null,
+    width: null,
+    maxWidth: null,
+    minWidth: null,
+    whiteSpace: null,
+    rasterizeText: false,
+  }
+
+  if (cs.fontSize) fix.fontSize = cs.fontSize
+  const fam = cs.fontFamily?.trim()
+  if (fam) fix.fontFamily = fam
+  if (cs.fontWeight) fix.fontWeight = cs.fontWeight
+  if (cs.fontStyle) fix.fontStyle = cs.fontStyle
+  if (cs.lineHeight) fix.lineHeight = cs.lineHeight
+  const ls = cs.letterSpacing
+  fix.letterSpacing = !ls || ls === 'normal' ? '0px' : ls
+  const variantNumeric = cs.fontVariantNumeric?.trim()
+  if (variantNumeric && variantNumeric !== 'normal') {
+    fix.fontVariantNumeric = variantNumeric
+  }
+  const features = cs.fontFeatureSettings?.trim()
+  if (features && features !== 'normal') {
+    fix.fontFeatureSettings = features
+  }
+  const variations = cs.fontVariationSettings?.trim()
+  if (variations && variations !== 'normal') {
+    fix.fontVariationSettings = variations
+  }
+  const kerning = cs.fontKerning?.trim()
+  if (kerning && kerning !== 'auto') {
+    fix.fontKerning = kerning
+  }
+
+  const ow = cs.overflowWrap || cs.getPropertyValue('overflow-wrap')
+  if (ow === 'anywhere') fix.overflowWrap = 'break-word'
+  if (cs.wordBreak === 'break-all') fix.wordBreak = 'normal'
+
+  const clamp = cs.webkitLineClamp
+  if (clamp && clamp !== 'none') {
+    // Computed display is often `flow-root` for -webkit-box; freeze that
+    // and line-clamp collapses into huge vertical gaps on long names.
+    fix.display = '-webkit-box'
+    fix.webkitBoxOrient = 'vertical'
+    fix.webkitLineClamp = String(clamp)
+  } else if (cs.display === 'list-item') {
+    fix.display = 'block'
+  }
+
+  const nowrap = (cs.whiteSpace || '').includes('nowrap')
+  const chipLike =
+    nowrap &&
+    node.matches(
+      [
+        '.sc-pixel-chips li',
+        '.sc-route-stop-name',
+        '.sc-ticket-place',
+        '.sc-ticket-line',
+        '.share-card-line-name',
+        '.sc-route-line-name',
+        '.sc-min-foot span',
+      ].join(', '),
+    )
+
+  if (chipLike) {
+    fix.width = 'max-content'
+    fix.maxWidth = '100%'
+    fix.minWidth = '0'
+    fix.whiteSpace = 'nowrap'
+    if (!fix.display) fix.display = 'block'
+    fix.rasterizeText = true
+  }
+
+  return fix
+}
+
+/**
+ * Replace a leaf text label with a canvas raster of the same glyphs.
+ * foreignObject often shifts JetBrains Mono metrics; baking the ink avoids
+ * post-render letter/word gaps while keeping the live DOM untouched after restore.
+ */
+function rasterizeLabelText(el: HTMLElement): void {
+  const text = el.textContent ?? ''
+  if (!text || el.querySelector('img[data-share-text-raster]')) return
+
+  const cs = window.getComputedStyle(el)
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  const ratio = Math.max(2, Math.min(4, window.devicePixelRatio || 2))
+  ctx.font = cs.font
+  const metrics = ctx.measureText(text)
+  const textW = Math.ceil(metrics.width)
+  const ascent = metrics.actualBoundingBoxAscent || 0
+  const descent = metrics.actualBoundingBoxDescent || 0
+  const textH = Math.ceil(
+    ascent + descent > 0
+      ? ascent + descent
+      : parseFloat(cs.fontSize) * 1.2,
+  )
+  const padX = 0
+  const padY = 0
+  const cssW = Math.max(1, textW + padX * 2)
+  const cssH = Math.max(1, textH + padY * 2)
+
+  canvas.width = Math.ceil(cssW * ratio)
+  canvas.height = Math.ceil(cssH * ratio)
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
+  ctx.font = cs.font
+  ctx.fillStyle = cs.color
+  ctx.textBaseline = 'alphabetic'
+  const baseline =
+    metrics.actualBoundingBoxAscent || parseFloat(cs.fontSize) * 0.8
+  ctx.fillText(text, padX, padY + baseline)
+
+  const img = document.createElement('img')
+  img.dataset.shareTextRaster = '1'
+  img.alt = text
+  img.src = canvas.toDataURL('image/png')
+  img.style.display = 'block'
+  img.style.width = `${cssW}px`
+  img.style.height = `${cssH}px`
+  img.style.maxWidth = '100%'
+  img.draggable = false
+
+  el.textContent = ''
+  el.style.display = 'block'
+  el.style.width = 'max-content'
+  el.style.maxWidth = '100%'
+  el.style.lineHeight = '0'
+  el.appendChild(img)
+}
+
 function freezeComputedStyles(root: HTMLElement): void {
   const nodes: Element[] = [root, ...root.querySelectorAll('*')]
+  const pending: FrozenStyleEntry[] = []
+
+  // Pass 1 — snapshot against the undisturbed layout.
   for (const node of nodes) {
     if (!(node instanceof HTMLElement) && !(node instanceof SVGElement)) continue
     const cs = window.getComputedStyle(node)
+    const styles: FrozenStyleEntry['styles'] = []
     for (const prop of FREEZE_STYLE_PROPS) {
       const kebab = camelToKebab(prop)
       let value = ''
@@ -256,14 +554,97 @@ function freezeComputedStyles(root: HTMLElement): void {
       if (!value) continue
       // Skip shorthand leftovers that browsers leave empty or "normal"-ish noise
       if (prop === 'inset' && value === 'auto') continue
+      // Freeze animations off so flame/glow frames don't flicker mid-capture.
+      if (prop === 'animation' || prop === 'animationName') {
+        value = 'none'
+      }
+      if (prop === 'animationPlayState') {
+        value = 'paused'
+      }
+      value = normalizeFrozenValue(prop, value)
+      styles.push({
+        kebab,
+        value,
+        priority: cs.getPropertyPriority(kebab),
+      })
+    }
+
+    let svgPaint: FrozenStyleEntry['svgPaint'] = null
+    let clearCssOpacity = false
+    // Mirror resolved SVG paint onto presentation attributes. Stylesheet
+    // `color-mix()` / `currentColor` often fail inside html-to-image's
+    // foreignObject clone; without concrete attrs, fill falls back to black
+    // (Monas) or shifts hue (Pixel train).
+    if (node instanceof SVGElement) {
+      svgPaint = []
+      let resolvedColor = ''
       try {
-        node.style.setProperty(
-          kebab,
-          value,
-          cs.getPropertyPriority(kebab) || undefined,
-        )
+        resolvedColor = modernColorToRgb(cs.getPropertyValue('color'))
+      } catch {
+        resolvedColor = ''
+      }
+      for (const attr of SVG_PAINT_ATTRS) {
+        let value = ''
+        try {
+          value = cs.getPropertyValue(attr)
+        } catch {
+          continue
+        }
+        if (!value || value === 'normal') continue
+        // Bake currentColor to a concrete rgb/hex so the clone cannot
+        // re-resolve against a different inherited color.
+        if (
+          (attr === 'fill' || attr === 'stroke' || attr === 'stop-color') &&
+          /currentColor/i.test(value) &&
+          resolvedColor
+        ) {
+          value = resolvedColor
+        } else {
+          value = modernColorToRgb(value)
+        }
+        svgPaint.push({ attr, value })
+      }
+      // Prefer attribute opacity over a frozen CSS opacity that can stack
+      // with the presentation attribute inside foreignObject serialization.
+      clearCssOpacity = node.hasAttribute('opacity')
+    }
+
+    pending.push({
+      node,
+      styles,
+      svgPaint,
+      clearCssOpacity,
+      textFix: buildTextFreezeFix(node, cs),
+    })
+  }
+
+  // Pass 2 — apply snapshots without intermediate reflows changing reads.
+  for (const entry of pending) {
+    const { node, styles, svgPaint, clearCssOpacity, textFix } = entry
+    if (!(node instanceof HTMLElement) && !(node instanceof SVGElement)) {
+      continue
+    }
+    for (const { kebab, value, priority } of styles) {
+      try {
+        node.style.setProperty(kebab, value, priority || undefined)
       } catch {
         /* SVG may reject some CSS props — ignore */
+      }
+    }
+    if (svgPaint && node instanceof SVGElement) {
+      for (const { attr, value } of svgPaint) {
+        try {
+          node.setAttribute(attr, value)
+        } catch {
+          /* ignore */
+        }
+      }
+      if (clearCssOpacity) {
+        try {
+          node.style.removeProperty('opacity')
+        } catch {
+          /* ignore */
+        }
       }
     }
     // Explicitly kill mobile text inflation on the freeze target.
@@ -271,12 +652,98 @@ function freezeComputedStyles(root: HTMLElement): void {
       node.style.setProperty('-webkit-text-size-adjust', '100%')
       node.style.setProperty('text-size-adjust', '100%')
       node.style.setProperty('zoom', '1')
+      // Keep spaces from stretching when FO font metrics diverge.
+      node.style.setProperty('word-spacing', '0px')
+      node.style.setProperty('text-align-last', 'auto')
+      node.style.setProperty('text-justify', 'none')
+      if (textFix) {
+        // Re-assert type longhands only — never `font: unset`, which inlines
+        // font-variant/kerning as unset and kills tabular-nums on WPM scores.
+        // `font` is already omitted from html-to-image includeStyleProperties.
+        if (textFix.fontFamily) {
+          node.style.setProperty('font-family', textFix.fontFamily)
+        }
+        if (textFix.fontSize) {
+          node.style.setProperty('font-size', textFix.fontSize)
+        }
+        if (textFix.fontWeight) {
+          node.style.setProperty('font-weight', textFix.fontWeight)
+        }
+        if (textFix.fontStyle) {
+          node.style.setProperty('font-style', textFix.fontStyle)
+        }
+        if (textFix.lineHeight) {
+          node.style.setProperty('line-height', textFix.lineHeight)
+        }
+        if (textFix.letterSpacing) {
+          node.style.setProperty('letter-spacing', textFix.letterSpacing)
+        }
+        if (textFix.fontVariantNumeric) {
+          node.style.setProperty(
+            'font-variant-numeric',
+            textFix.fontVariantNumeric,
+          )
+        }
+        if (textFix.fontFeatureSettings) {
+          node.style.setProperty(
+            'font-feature-settings',
+            textFix.fontFeatureSettings,
+          )
+        }
+        if (textFix.fontVariationSettings) {
+          node.style.setProperty(
+            'font-variation-settings',
+            textFix.fontVariationSettings,
+          )
+        }
+        if (textFix.fontKerning) {
+          node.style.setProperty('font-kerning', textFix.fontKerning)
+        }
+        if (textFix.overflowWrap) {
+          node.style.setProperty('overflow-wrap', textFix.overflowWrap)
+        }
+        if (textFix.wordBreak) {
+          node.style.setProperty('word-break', textFix.wordBreak)
+        }
+        if (textFix.display) {
+          node.style.setProperty('display', textFix.display)
+        }
+        if (textFix.webkitBoxOrient) {
+          node.style.setProperty('-webkit-box-orient', textFix.webkitBoxOrient)
+        }
+        if (textFix.webkitLineClamp) {
+          node.style.setProperty('-webkit-line-clamp', textFix.webkitLineClamp)
+          node.style.setProperty('line-clamp', textFix.webkitLineClamp)
+        }
+        if (textFix.width) node.style.setProperty('width', textFix.width)
+        if (textFix.maxWidth) {
+          node.style.setProperty('max-width', textFix.maxWidth)
+        }
+        if (textFix.minWidth) {
+          node.style.setProperty('min-width', textFix.minWidth)
+        }
+        if (textFix.whiteSpace) {
+          node.style.setProperty('white-space', textFix.whiteSpace)
+        }
+      }
+    }
+  }
+
+  // Pass 3 — bake nowrap label glyphs so FO cannot alter spacing.
+  for (const entry of pending) {
+    if (
+      entry.textFix?.rasterizeText &&
+      entry.node instanceof HTMLElement
+    ) {
+      rasterizeLabelText(entry.node)
     }
   }
 }
 
 type InlineStyleSnapshot = {
   cssText: string
+  /** SVG presentation attrs present before freeze (null = was absent). */
+  svgPaint: Partial<Record<(typeof SVG_PAINT_ATTRS)[number], string | null>> | null
 }
 
 function snapshotSubtreeInline(root: HTMLElement): Map<Element, InlineStyleSnapshot> {
@@ -284,7 +751,14 @@ function snapshotSubtreeInline(root: HTMLElement): Map<Element, InlineStyleSnaps
   const nodes: Element[] = [root, ...root.querySelectorAll('*')]
   for (const node of nodes) {
     if (!(node instanceof HTMLElement) && !(node instanceof SVGElement)) continue
-    map.set(node, { cssText: node.style.cssText })
+    let svgPaint: InlineStyleSnapshot['svgPaint'] = null
+    if (node instanceof SVGElement) {
+      svgPaint = {}
+      for (const attr of SVG_PAINT_ATTRS) {
+        svgPaint[attr] = node.hasAttribute(attr) ? node.getAttribute(attr) : null
+      }
+    }
+    map.set(node, { cssText: node.style.cssText, svgPaint })
   }
   return map
 }
@@ -298,6 +772,13 @@ function restoreSubtreeInline(
     if (!(node instanceof HTMLElement) && !(node instanceof SVGElement)) continue
     const prev = snap.get(node)
     node.style.cssText = prev?.cssText ?? ''
+    if (node instanceof SVGElement && prev?.svgPaint) {
+      for (const attr of SVG_PAINT_ATTRS) {
+        const was = prev.svgPaint[attr]
+        if (was === null || was === undefined) node.removeAttribute(attr)
+        else node.setAttribute(attr, was)
+      }
+    }
   }
 }
 
@@ -359,6 +840,14 @@ export async function captureShareCardPng(
     freezeComputedStyles(node)
     await nextFrame()
 
+    // html-to-image's cloneCSSStyle does `floor(fontSizePx) - 0.1`, which
+    // desyncs frozen chip widths from glyph metrics and opens word gaps.
+    // Keep our frozen inline font-size by omitting those props from the clone
+    // overwrite pass (inline styles from the DOM clone are preserved).
+    const includeStyleProperties = Array.from(
+      window.getComputedStyle(document.documentElement),
+    ).filter((prop) => prop !== 'font-size' && prop !== 'font')
+
     const options = {
       cacheBust: true,
       // One scaling path only — combining pixelRatio with canvasWidth multiplies
@@ -368,6 +857,7 @@ export async function captureShareCardPng(
       height: SHARE_DESIGN_HEIGHT,
       backgroundColor: '#050b12',
       preferredFontFormat: 'woff2' as const,
+      includeStyleProperties,
       style: {
         width: `${SHARE_DESIGN_WIDTH}px`,
         height: `${SHARE_DESIGN_HEIGHT}px`,
