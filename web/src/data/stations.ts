@@ -228,6 +228,29 @@ export const STATION_LINES: StationLine[] = [
   },
 ]
 
+export type LineCategory = 'KRL' | 'MRT' | 'LRT'
+
+export const LINE_CATEGORIES: LineCategory[] = ['KRL', 'MRT', 'LRT']
+
+function categoryForSystem(system: StationLine['system']): LineCategory {
+  if (system === 'KRL') return 'KRL'
+  if (system === 'MRT') return 'MRT'
+  return 'LRT'
+}
+
+/** Lines grouped for the homepage picker (LRT Jakarta + Jabodebek under LRT). */
+export function linesByCategory(): Record<LineCategory, StationLine[]> {
+  const groups: Record<LineCategory, StationLine[]> = {
+    KRL: [],
+    MRT: [],
+    LRT: [],
+  }
+  for (const line of STATION_LINES) {
+    groups[categoryForSystem(line.system)].push(line)
+  }
+  return groups
+}
+
 export function pickRandomLine(): StationLine {
   const index = Math.floor(Math.random() * STATION_LINES.length)
   return STATION_LINES[index]!

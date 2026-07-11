@@ -18,13 +18,14 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
   function ShareCard({ result }, ref) {
     const { line, wpm, correctChars, elapsedMs } = result
     const stations = line.stations
+    // Keep preview short so chips + footer fit inside the square card
     const preview =
-      stations.length <= 8
+      stations.length <= 6
         ? stations
         : [
-            ...stations.slice(0, 4),
+            ...stations.slice(0, 3),
             '…',
-            ...stations.slice(stations.length - 3),
+            ...stations.slice(stations.length - 2),
           ]
 
     return (
