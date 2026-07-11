@@ -115,6 +115,7 @@ const layout = await page.evaluate(() => {
   const visibleBottom = (vv?.offsetTop ?? 0) + (vv?.height ?? window.innerHeight)
   const visibleTop = vv?.offsetTop ?? 0
   const gap = ir.top - pr.bottom
+  const roomBelowRail = visibleBottom - rr.bottom
   return {
     kb: app?.getAttribute('data-kb'),
     vvHeight: vv?.height ?? null,
@@ -122,12 +123,14 @@ const layout = await page.evaluate(() => {
     input: { top: +ir.top.toFixed(1), bottom: +ir.bottom.toFixed(1) },
     rail: { top: +rr.top.toFixed(1), bottom: +rr.bottom.toFixed(1) },
     gap: +gap.toFixed(1),
+    roomBelowRail: +roomBelowRail.toFixed(1),
     promptInView: pr.bottom > visibleTop + 4 && pr.top < visibleBottom - 4,
     inputInView: ir.bottom > visibleTop + 4 && ir.top < visibleBottom - 4,
     inputAboveRail: ir.bottom <= rr.top + 10,
     inputBelowPrompt: ir.top >= pr.bottom - 2,
-    // Cluster should sit near the top of the visual viewport (not packed to the keyboard).
-    clusterNearTop: pr.top - visibleTop <= 120,
+    // Prompt near top; input+map docked near the keyboard (bottom of vv).
+    promptNearTop: pr.top - visibleTop <= 120,
+    dockNearKeyboard: roomBelowRail <= 24,
   }
 })
 
@@ -139,15 +142,15 @@ const ok =
   layout.inputInView &&
   layout.inputBelowPrompt &&
   layout.inputAboveRail &&
-  layout.gap >= 0 &&
-  layout.gap <= 160 &&
-  layout.clusterNearTop
+  layout.gap >= 40 &&
+  layout.promptNearTop &&
+  layout.dockNearKeyboard
 
 if (!ok) {
   console.error('RED: iOS overlay keyboard splits prompt and input')
   process.exitCode = 1
 } else {
-  console.log('GREEN: prompt + input stay clustered above line map')
+  console.log('GREEN: prompt top + input/map docked above keyboard')
 }
 
 await browser.close()

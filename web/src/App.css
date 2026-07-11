@@ -4273,10 +4273,8 @@ input {
 
   /*
    * Soft keyboard open (iOS overlay + Android resize): pin the race shell to the
-   * visual viewport and keep prompt + input + line map in normal flow so they
-   * stay clustered. Avoid position:fixed docks — on iOS they sit on the layout
-   * viewport and leave a huge gap (or fall under the keyboard) when --kb-inset
-   * is wrong or scrollIntoView pans the visual viewport.
+   * visual viewport. Station prompt stays at the top; input + line map sit just
+   * above the keyboard with breathing room in between.
    */
   .app[data-phase='racing'][data-kb='open'] {
     --race-dock-height: 0px;
@@ -4295,7 +4293,6 @@ input {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* Keep prompt + input + map clustered at the top of the visible area. */
     justify-content: flex-start;
     padding-top: max(0.35rem, env(safe-area-inset-top, 0px));
     padding-inline: max(0.65rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
@@ -4342,7 +4339,7 @@ input {
   }
 
   .app[data-phase='racing'][data-kb='open'] .race {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -4362,7 +4359,8 @@ input {
   .app[data-phase='racing'][data-kb='open'] .station-stage {
     height: auto;
     min-height: 2.5rem;
-    margin: 0 0 0.15rem;
+    /* Push the type dock (and then the line map) down to the keyboard. */
+    margin: 0 0 auto;
   }
 
   .app[data-phase='idle'] .hero {
@@ -4823,7 +4821,7 @@ input {
   }
 
   .app[data-phase='racing'][data-kb='open'] {
-    /* Compact landscape: keep prompt+input+rail at the top of the visual viewport */
+    /* Compact landscape: prompt top, input+rail above keyboard */
     justify-content: flex-start;
   }
 

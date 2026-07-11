@@ -60,14 +60,18 @@ const layout = await page.evaluate(() => {
   const pr = prompt.getBoundingClientRect()
   const rr = rail.getBoundingClientRect()
   const gap = ir.top - pr.bottom
+  const visibleBottom = window.innerHeight
   return {
     kb: app?.getAttribute('data-kb'),
     innerHeight: window.innerHeight,
     gap: +gap.toFixed(1),
+    roomBelowRail: +(visibleBottom - rr.bottom).toFixed(1),
     promptInView: pr.top >= -2 && pr.bottom <= window.innerHeight + 2,
     inputInView: ir.top >= -2 && ir.bottom <= window.innerHeight + 2,
     inputAboveRail: ir.bottom <= rr.top + 10,
     inputBelowPrompt: ir.top >= pr.bottom - 2,
+    promptNearTop: pr.top <= 120,
+    dockNearKeyboard: visibleBottom - rr.bottom <= 24,
   }
 })
 
@@ -79,14 +83,15 @@ const ok =
   layout.inputInView &&
   layout.inputBelowPrompt &&
   layout.inputAboveRail &&
-  layout.gap >= 0 &&
-  layout.gap <= 160
+  layout.gap >= 40 &&
+  layout.promptNearTop &&
+  layout.dockNearKeyboard
 
 if (!ok) {
   console.error('RED: Android resize keyboard layout broken')
   process.exitCode = 1
 } else {
-  console.log('GREEN: Android resize keyboard keeps prompt + input clustered')
+  console.log('GREEN: Android resize keyboard splits prompt top / dock bottom')
 }
 
 await browser.close()
