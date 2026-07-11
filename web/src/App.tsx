@@ -181,10 +181,15 @@ export default function App() {
     inputRef.current?.focus({ preventScroll: true })
   }, [phase, race?.stationIndex, autofillGuard])
 
-  /** Keep the fixed line map + type dock above the soft keyboard. */
+  /** Sync visual-viewport metrics so iOS overlay keyboards keep the typing UI in view. */
+  const syncKeyboardInsetRef = useRef<() => void>(() => {})
+
   useEffect(() => {
     if (phase !== 'racing') {
-      document.documentElement.style.removeProperty('--kb-inset')
+      const root = document.documentElement
+      root.style.removeProperty('--kb-inset')
+      root.style.removeProperty('--vv-top')
+      root.style.removeProperty('--vv-height')
       raceViewportBaseline.current = null
       setKeyboardOpen(false)
       return
@@ -199,17 +204,30 @@ export default function App() {
     const syncKeyboardInset = () => {
       const vv = window.visualViewport
       const baseline = raceViewportBaseline.current ?? window.innerHeight
-      // Overlay keyboards (iOS): gap between layout viewport and visual viewport.
+      const vvTop = vv?.offsetTop ?? 0
+      const rawVvHeight = vv?.height ?? window.innerHeight
+      // Overlay keyboards (iOS Safari/Chrome): layout viewport stays tall; visual
+      // viewport shrinks. Gap below the visual viewport is the keyboard chrome.
       const overlayInset = vv
-        ? Math.max(0, window.innerHeight - (vv.height + vv.offsetTop))
+        ? Math.max(0, window.innerHeight - (rawVvHeight + vvTop))
         : 0
       // resizes-content (Android Chrome): layout height shrinks — do NOT add that
       // into --kb-inset or fixed bottom docks jump to the top of the screen.
       const resizedInset = Math.max(0, baseline - window.innerHeight)
+      // Visible typing shell: use visual viewport on overlay keyboards; when the
+      // layout viewport itself resized (Android), prefer innerHeight so a stale
+      // visualViewport cannot leave the shell taller than the screen.
+      const shellHeight =
+        overlayInset > 40 ? rawVvHeight : window.innerHeight
+      const shellTop = overlayInset > 40 ? vvTop : 0
+      // Set on <html> — .app must NOT redefine --kb-inset or these are ignored.
       root.style.setProperty('--kb-inset', `${Math.round(overlayInset)}px`)
+      root.style.setProperty('--vv-top', `${Math.round(shellTop)}px`)
+      root.style.setProperty('--vv-height', `${Math.round(shellHeight)}px`)
       setKeyboardOpen(overlayInset > 120 || resizedInset > 120)
     }
 
+    syncKeyboardInsetRef.current = syncKeyboardInset
     syncKeyboardInset()
     const vv = window.visualViewport
     vv?.addEventListener('resize', syncKeyboardInset)
@@ -220,6 +238,8 @@ export default function App() {
       vv?.removeEventListener('scroll', syncKeyboardInset)
       window.removeEventListener('resize', syncKeyboardInset)
       root.style.removeProperty('--kb-inset')
+      root.style.removeProperty('--vv-top')
+      root.style.removeProperty('--vv-height')
       setKeyboardOpen(false)
     }
   }, [phase])
@@ -227,17 +247,12 @@ export default function App() {
   function unlockPromptField(el?: HTMLInputElement | null) {
     if (el) el.readOnly = false
     setAutofillGuard(false)
-    window.requestAnimationFrame(() => {
-      el?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' })
-    })
+    // Do not scrollIntoView — on iOS that pans the visual viewport and splits
+    // the station prompt (top) from the docked input (bottom).
+    // Re-measure after the soft-keyboard animation (iOS ~250–350ms).
+    window.setTimeout(() => syncKeyboardInsetRef.current(), 50)
+    window.setTimeout(() => syncKeyboardInsetRef.current(), 350)
   }
-
-  /** When the keyboard docks the type field, keep the station prompt above it. */
-  useEffect(() => {
-    if (phase !== 'racing' || !keyboardOpen) return
-    const stage = document.querySelector('.station-stage')
-    stage?.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'smooth' })
-  }, [phase, keyboardOpen, race?.stationIndex])
 
   useEffect(() => {
     return () => {
