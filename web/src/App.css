@@ -55,7 +55,8 @@ input {
   align-items: center;
   justify-content: safe center;
   padding-inline: clamp(1.25rem, 4vw, 3rem);
-  padding-block: clamp(1.5rem, 4vw, 2.5rem) clamp(2.5rem, 8vh, 4rem);
+  /* Top pad clears fixed .drone-backdrop__credit (2-line mono band) */
+  padding-block: clamp(2.75rem, 7vh, 3.75rem) clamp(2.5rem, 8vh, 4rem);
 }
 
 .app[data-phase='idle'] .hero {
@@ -437,13 +438,14 @@ input {
 
 .drone-backdrop__credit {
   position: absolute;
-  top: clamp(0.75rem, 2.5vh, 1.25rem);
-  left: clamp(0.75rem, 3vw, 1.5rem);
+  top: max(0.65rem, env(safe-area-inset-top, 0px));
+  left: max(0.65rem, env(safe-area-inset-left, 0px));
   z-index: 4;
   margin: 0;
-  max-width: min(22rem, 70vw);
+  /* Stay in the corner — never reach the centered brand/header column */
+  max-width: min(11.5rem, 36vw);
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   letter-spacing: 0.04em;
   line-height: 1.35;
   color: color-mix(in srgb, var(--fog) 72%, transparent);
@@ -451,6 +453,8 @@ input {
   pointer-events: none;
   opacity: 0;
   animation: drone-credit-in 0.55s ease 0.35s both;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 @keyframes drone-credit-in {
@@ -1553,7 +1557,7 @@ input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
+  gap: 0.35rem;
   animation: rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -1566,6 +1570,8 @@ input {
   font-size: 0.72rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
+  position: relative;
+  z-index: 1;
 }
 
 .results-kicker-dot {
@@ -1584,18 +1590,20 @@ input {
  * Departure strip framing kept; brand no longer twins the line.
  */
 .results-brand {
-  margin: 0.35rem 0 0;
+  margin: 0;
   width: 100%;
   min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
+  gap: 0.08rem;
   font-family: var(--font-display);
   font-weight: 700;
-  line-height: 0.88;
+  line-height: 1;
   color: color-mix(in srgb, var(--fog) 72%, var(--paper));
   opacity: 0.88;
+  position: relative;
+  z-index: 1;
 }
 
 .results-brand-primary,
@@ -4081,9 +4089,27 @@ input {
   .app[data-phase='idle'],
   .app[data-phase='finished'] {
     padding-inline: max(0.85rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
-    padding-block: max(1.1rem, env(safe-area-inset-top, 0px))
+    /* Keep credit clear of centered hero / LINE CLEARED stack */
+    padding-block: max(3.65rem, calc(env(safe-area-inset-top, 0px) + 2.85rem))
       max(1.75rem, env(safe-area-inset-bottom, 0px));
     justify-content: flex-start;
+  }
+
+  .drone-backdrop__credit {
+    top: max(0.5rem, env(safe-area-inset-top, 0px));
+    left: max(0.5rem, env(safe-area-inset-left, 0px));
+    max-width: min(8.75rem, 34vw);
+    font-size: 0.52rem;
+    line-height: 1.3;
+    opacity: 0.55;
+    animation: none;
+  }
+
+  .app[data-phase='finished'] .drone-backdrop__credit,
+  .app[data-phase='idle'] .drone-backdrop__credit {
+    /* Corner plate only — never compete with brand/header */
+    max-width: min(7.75rem, 30vw);
+    opacity: 0.5;
   }
 
   /* Soft keyboard: pin race shell to the visual viewport and scroll HUD above the fixed line map */
