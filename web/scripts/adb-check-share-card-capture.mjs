@@ -88,13 +88,17 @@ const preview = await page.evaluate(() => {
 })
 console.log('PREVIEW', JSON.stringify(preview, null, 2))
 
-// Intercept data-URL downloads from Save image
+// Intercept Save image downloads (blob: URLs preferred; data: fallback)
 const dataUrls = await page.evaluate(async () => {
   const captured = []
   const proto = HTMLAnchorElement.prototype
   const orig = proto.click
   proto.click = function clickPatched() {
-    if (this.download && typeof this.href === 'string' && this.href.startsWith('data:image')) {
+    if (
+      this.download &&
+      typeof this.href === 'string' &&
+      (this.href.startsWith('data:image') || this.href.startsWith('blob:'))
+    ) {
       captured.push(this.href)
     }
     return orig.apply(this, arguments)
@@ -107,8 +111,39 @@ const dataUrls = await page.evaluate(async () => {
     await new Promise((r) => setTimeout(r, 100))
   }
   proto.click = orig
-  return captured
+
+  const out = []
+  for (const href of captured) {
+    if (href.startsWith('data:image')) {
+      out.push(href)
+      continue
+    }
+    const res = await fetch(href)
+    const blob = await res.blob()
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+    out.push(dataUrl)
+  }
+  return out
 })
+
+// Also assert offscreen capture host is design-sized
+const captureHost = await page.evaluate(() => {
+  const host = document.querySelector('.share-capture-host .share-card')
+  if (!host) return null
+  return { offsetWidth: host.offsetWidth, offsetHeight: host.offsetHeight }
+})
+console.log('CAPTURE_HOST', JSON.stringify(captureHost))
+
+// Full card page button present
+const hasFullPage = await page.evaluate(
+  () => !!document.querySelector('.share-actions .btn.ghost'),
+)
+console.log('FULL_CARD_PAGE_BTN', hasFullPage)
 
 if (dataUrls.length === 0) {
   console.error('RED: no PNG data URL captured from Save image')
@@ -127,6 +162,7 @@ console.log('PNG', JSON.stringify(png))
 adbShot('06-finished-preview')
 
 const layoutOk = preview.cardOffsetWidth === 280
+const hostOk = captureHost?.offsetWidth === 280
 const pngOk =
   png.width === 1080 && png.height >= 1915 && png.height <= 1925
 
@@ -134,8 +170,11 @@ console.log(
   JSON.stringify(
     {
       layoutOk,
+      hostOk,
       pngOk,
+      hasFullPage,
       previewWidth: preview.cardOffsetWidth,
+      hostWidth: captureHost?.offsetWidth ?? null,
       pngSize: `${png.width}x${png.height}`,
       brandFontSize: preview.brandFontSize,
     },
@@ -144,11 +183,11 @@ console.log(
   ),
 )
 
-if (!layoutOk || !pngOk) {
+if (!layoutOk || !hostOk || !pngOk || !hasFullPage) {
   console.error('RED: share card capture not at canonical size')
   process.exitCode = 1
 } else {
-  console.log('GREEN: mobile preview layout 280px; PNG 1080×1920')
+  console.log('GREEN: mobile preview + capture host 280px; PNG 1080×1920; full page btn')
 }
 
 await browser.close()
