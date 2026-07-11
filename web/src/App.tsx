@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, KeyboardEvent } from 'react'
 import { ShareCard } from './components/ShareCard'
-import { pickRandomLine, type StationLine } from './data/stations'
+import {
+  LINE_CATEGORIES,
+  linesByCategory,
+  pickRandomLine,
+  type StationLine,
+} from './data/stations'
 import {
   captureShareCardPng,
   downloadDataUrl,
@@ -14,7 +19,8 @@ import './App.css'
 
 type Phase = 'idle' | 'racing' | 'finished'
 
-const SLIDE_MS = 480
+const SLIDE_MS = 520
+const LINE_GROUPS = linesByCategory()
 
 function lineStyle(color: string): CSSProperties {
   return { ['--line' as string]: color } as CSSProperties
@@ -33,9 +39,9 @@ type SlideVisual = {
   key: number
 }
 
-function createRace(): RaceState {
+function createRace(line?: StationLine): RaceState {
   return {
-    line: pickRandomLine(),
+    line: line ?? pickRandomLine(),
     stationIndex: 0,
     input: '',
     startedAt: null,
@@ -118,15 +124,37 @@ export default function App() {
     }, SLIDE_MS)
   }
 
-  function startRace() {
+  function goHome() {
     clearSlideTimer()
     setSlide(null)
-    setRace(createRace())
+    setRace(null)
+    setFinalWpm(0)
+    setElapsedMs(0)
+    setShareNote(null)
+    setPhase('idle')
+  }
+
+  function startRace(line?: StationLine) {
+    clearSlideTimer()
+    setSlide(null)
+    setRace(createRace(line))
     setFinalWpm(0)
     setElapsedMs(0)
     setShareNote(null)
     setPhase('racing')
     setNow(Date.now())
+  }
+
+  function restartSameLine() {
+    if (!race) {
+      startRace()
+      return
+    }
+    startRace(race.line)
+  }
+
+  function startRandomLine() {
+    startRace()
   }
 
   function finishRace(state: RaceState, endedAt: number) {
@@ -141,32 +169,17 @@ export default function App() {
     setPhase('finished')
   }
 
-  function onInputChange(value: string) {
+  function advanceStation() {
     if (!race || phase !== 'racing') return
 
     const target = race.line.stations[race.stationIndex]!
-    const startedAt = race.startedAt ?? Date.now()
-    // Allow wrong characters; only cap at the station name length
-    const nextInput = value.slice(0, target.length)
+    if (race.input.length !== target.length) return
 
-    // Advance when the full name is typed — mistakes do not block later correct chars
-    const completed = nextInput.length === target.length
-
-    if (!completed) {
-      setRace({
-        ...race,
-        input: nextInput,
-        startedAt,
-      })
-      return
-    }
-
-    const nextCorrect = race.correctChars + countCorrectChars(target, nextInput)
+    const nextCorrect = race.correctChars + countCorrectChars(target, race.input)
     const nextIndex = race.stationIndex + 1
     const nextState: RaceState = {
       ...race,
       input: '',
-      startedAt,
       correctChars: nextCorrect,
       stationIndex: nextIndex,
     }
@@ -176,9 +189,52 @@ export default function App() {
       return
     }
 
-    // Advance input target immediately — slide is visual only
     playSlide(target)
     setRace(nextState)
+  }
+
+  function onInputChange(value: string) {
+    if (!race || phase !== 'racing') return
+
+    const target = race.line.stations[race.stationIndex]!
+    const startedAt = race.startedAt ?? Date.now()
+    const nextInput = value.slice(0, target.length)
+
+    setRace({
+      ...race,
+      input: nextInput,
+      startedAt,
+    })
+  }
+
+  function onStationKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (!race || phase !== 'racing') return
+
+    const target = race.line.stations[race.stationIndex]!
+    const stationComplete = race.input.length === target.length
+
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      goHome()
+      return
+    }
+
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      startRandomLine()
+      return
+    }
+
+    if (e.key === 'r' && e.altKey) {
+      e.preventDefault()
+      restartSameLine()
+      return
+    }
+
+    if (e.key === ' ' && stationComplete) {
+      e.preventDefault()
+      advanceStation()
+    }
   }
 
   async function withShareCard(
@@ -227,6 +283,12 @@ export default function App() {
       ? race.line.stations[race.stationIndex + 1]!
       : null
 
+  const stationComplete =
+    phase === 'racing' &&
+    !!race &&
+    race.input.length === currentStation.length &&
+    currentStation.length > 0
+
   const liveElapsed =
     race?.startedAt && phase === 'racing' ? Math.max(now - race.startedAt, 1) : 0
   const liveCorrect =
@@ -262,13 +324,52 @@ export default function App() {
           <p className="system-tag">Jakarta rail · typing race</p>
           <h1 className="brand">StationTypeRace</h1>
           <p className="lede">
-            Type every stop on a random KRL, MRT, or LRT line — one station at a
-            time.
+            Type every stop on a KRL, MRT, or LRT line — one station at a time.
           </p>
           <div className="cta-row">
-            <button type="button" className="btn primary" onClick={startRace}>
-              Board a line
+            <button
+              type="button"
+              className="btn primary"
+              onClick={startRandomLine}
+            >
+              Random line
             </button>
+          </div>
+
+          <div className="line-picker">
+            <p className="line-picker-label">Or choose a line</p>
+            <div className="line-picker-columns">
+              {LINE_CATEGORIES.map((category) => {
+                const lines = LINE_GROUPS[category]
+                if (lines.length === 0) return null
+                return (
+                  <div key={category} className="line-group">
+                    <h2 className="line-group-title">{category}</h2>
+                    <ul className="line-group-list">
+                      {lines.map((line) => (
+                        <li key={line.id}>
+                          <button
+                            type="button"
+                            className="line-pick"
+                            style={lineStyle(line.color)}
+                            onClick={() => startRace(line)}
+                          >
+                            <span className="line-pick-dot" aria-hidden="true" />
+                          <span className="line-pick-body">
+                            <span className="line-pick-name">{line.name}</span>
+                            <span className="line-pick-route">{line.route}</span>
+                            <span className="line-pick-meta">
+                              {line.stations.length} stops
+                            </span>
+                          </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </section>
       )}
@@ -290,6 +391,36 @@ export default function App() {
             </div>
           </header>
 
+          <div className="race-controls" role="toolbar" aria-label="Session controls">
+            <button
+              type="button"
+              className="btn ghost btn-compact"
+              onClick={goHome}
+              title="Esc"
+            >
+              Home
+              <kbd className="key-hint">Esc</kbd>
+            </button>
+            <button
+              type="button"
+              className="btn ghost btn-compact"
+              onClick={restartSameLine}
+              title="Alt+R"
+            >
+              Restart
+              <kbd className="key-hint">Alt+R</kbd>
+            </button>
+            <button
+              type="button"
+              className="btn ghost btn-compact"
+              onClick={startRandomLine}
+              title="Ctrl+Enter"
+            >
+              New line
+              <kbd className="key-hint">Ctrl+↵</kbd>
+            </button>
+          </div>
+
           <div
             className="progress-rail"
             role="progressbar"
@@ -304,7 +435,13 @@ export default function App() {
             {race.line.stations.length}
           </p>
 
-          <p className="prompt-label">Type this station</p>
+          <p className="prompt-label">
+            {stationComplete
+              ? nextStation
+                ? 'Press Space for next station'
+                : 'Press Space to finish'
+              : 'Type this station'}
+          </p>
 
           <div
             className={['station-stage', isSliding ? 'is-sliding' : '']
@@ -329,6 +466,7 @@ export default function App() {
                 'station-slide',
                 'is-current',
                 isSliding ? 'is-entering' : '',
+                stationComplete ? 'is-ready' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
@@ -353,12 +491,19 @@ export default function App() {
             className="station-input"
             value={race.input}
             onChange={(e) => onInputChange(e.target.value)}
+            onKeyDown={onStationKeyDown}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck={false}
-            placeholder="Start typing…"
+            placeholder={stationComplete ? 'Space to continue…' : 'Start typing…'}
           />
+          {stationComplete && (
+            <p className="space-hint" role="status">
+              <kbd className="key-hint">Space</kbd>
+              {nextStation ? ' next station' : ' finish line'}
+            </p>
+          )}
         </section>
       )}
 
@@ -396,17 +541,10 @@ export default function App() {
           )}
 
           <div className="cta-row">
-            <button type="button" className="btn ghost" onClick={startRace}>
+            <button type="button" className="btn ghost" onClick={startRandomLine}>
               Next random line
             </button>
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={() => {
-                setPhase('idle')
-                setRace(null)
-              }}
-            >
+            <button type="button" className="btn ghost" onClick={goHome}>
               Back
             </button>
           </div>
