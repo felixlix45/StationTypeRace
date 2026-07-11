@@ -130,15 +130,20 @@ export default function App() {
   const [shareBusy, setShareBusy] = useState(false)
   const [shareNote, setShareNote] = useState<string | null>(null)
   const [shareVariant, setShareVariant] = useState<ShareCardVariant>('neon')
+  /** Pre-rendered PNG for the visible preview — same bytes Save/Share use. */
+  const [sharePngDataUrl, setSharePngDataUrl] = useState<string | null>(null)
+  const [sharePngPreparing, setSharePngPreparing] = useState(false)
   const [landmarkId, setLandmarkId] = useState<LandmarkId | null>(null)
   /** Blocks mobile Contact/Autofill heuristics until the field is activated. */
   const [autofillGuard, setAutofillGuard] = useState(true)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  /** Live preview card (scaled) — not used for PNG capture. */
+  /** Live preview card (scaled) — fallback while PNG is preparing. */
   const shareCardRef = useRef<HTMLDivElement>(null)
   /** Offscreen design-size twin — source of truth for Save / Share PNG. */
   const shareCaptureRef = useRef<HTMLDivElement>(null)
+  /** Bumps to cancel in-flight preview captures when variant/result changes. */
+  const sharePngGenRef = useRef(0)
   const slideTimer = useRef<number | null>(null)
   /** Layout height before the soft keyboard — used to detect kb open on mobile. */
   const raceViewportBaseline = useRef<number | null>(null)
@@ -594,7 +599,9 @@ export default function App() {
     setShareBusy(true)
     setShareNote(null)
     try {
-      const dataUrl = await captureShareCardPng(captureNode)
+      // Prefer the already-rendered preview PNG so Save matches what you see.
+      const dataUrl =
+        sharePngDataUrl ?? (await captureShareCardPng(captureNode))
       await action(dataUrl, result)
     } catch {
       setShareNote('Could not create image — try Full card page')
@@ -689,6 +696,53 @@ export default function App() {
           device: race.device,
         }
       : null
+
+  // Pre-render the share PNG once per result/variant so the on-screen card is
+  // the real export (long-press save on mobile) and Save/Share reuse it.
+  useEffect(() => {
+    if (phase !== 'finished' || !shareResult) {
+      sharePngGenRef.current += 1
+      setSharePngDataUrl(null)
+      setSharePngPreparing(false)
+      return
+    }
+
+    const gen = ++sharePngGenRef.current
+    setSharePngPreparing(true)
+    setSharePngDataUrl(null)
+
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        const node = shareCaptureRef.current
+        if (!node) {
+          if (gen === sharePngGenRef.current) setSharePngPreparing(false)
+          return
+        }
+        try {
+          const dataUrl = await captureShareCardPng(node)
+          if (gen !== sharePngGenRef.current) return
+          setSharePngDataUrl(dataUrl)
+        } catch {
+          if (gen !== sharePngGenRef.current) return
+          setSharePngDataUrl(null)
+        } finally {
+          if (gen === sharePngGenRef.current) setSharePngPreparing(false)
+        }
+      })()
+    }, 120)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [
+    phase,
+    shareVariant,
+    shareResult?.line.id,
+    shareResult?.wpm,
+    shareResult?.accuracy,
+    shareResult?.elapsedMs,
+    shareResult?.device,
+  ])
 
   const finishedRoute = race ? splitRoute(race.line.route) : null
 
@@ -1053,14 +1107,31 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="share-card-frame-scale">
-                <div className="share-card-frame">
-                  <ShareCard
-                    ref={shareCardRef}
-                    result={shareResult}
-                    variant={shareVariant}
+              <div
+                className={
+                  sharePngPreparing
+                    ? 'share-card-frame-scale is-preparing'
+                    : 'share-card-frame-scale'
+                }
+              >
+                {sharePngDataUrl ? (
+                  <img
+                    className="share-card-png-preview"
+                    src={sharePngDataUrl}
+                    alt="Share card — long-press to save on mobile"
+                    width={1080}
+                    height={1920}
+                    draggable={false}
                   />
-                </div>
+                ) : (
+                  <div className="share-card-frame">
+                    <ShareCard
+                      ref={shareCardRef}
+                      result={shareResult}
+                      variant={shareVariant}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Design-size twin for PNG export — no preview scale / drop-shadow */}
@@ -1077,15 +1148,15 @@ export default function App() {
                   type="button"
                   className="btn primary"
                   onClick={saveShareImage}
-                  disabled={shareBusy}
+                  disabled={shareBusy || sharePngPreparing}
                 >
-                  {shareBusy ? 'Preparing…' : 'Save image'}
+                  {shareBusy || sharePngPreparing ? 'Preparing…' : 'Save image'}
                 </button>
                 <button
                   type="button"
                   className="btn neon"
                   onClick={shareShareImage}
-                  disabled={shareBusy}
+                  disabled={shareBusy || sharePngPreparing}
                 >
                   Share
                 </button>
@@ -1098,9 +1169,12 @@ export default function App() {
                   Full card page
                 </button>
               </div>
-              {shareNote && (
+              {(shareNote || sharePngDataUrl) && (
                 <p className="share-note" role="status">
-                  {shareNote}
+                  {shareNote ??
+                    (sharePngDataUrl
+                      ? 'Long-press the card to save on mobile'
+                      : null)}
                 </p>
               )}
             </div>
