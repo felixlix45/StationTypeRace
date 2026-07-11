@@ -8,10 +8,13 @@ import {
   captureShareCardPng,
   clearSharePagePayload,
   downloadDataUrl,
+  isShareCardRatio,
   loadSharePagePayload,
   saveSharePagePayload,
   shareFilename,
   shareResultImage,
+  SHARE_CARD_RATIOS,
+  type ShareCardRatio,
   type SharePagePayload,
   type ShareResult,
 } from '../lib/shareCard'
@@ -32,6 +35,10 @@ export function ShareScreenshotPage() {
     const stored = loadSharePagePayload()?.variant
     return stored && isShareVariant(stored) ? stored : 'neon'
   })
+  const [ratio, setRatio] = useState<ShareCardRatio>(() => {
+    const stored = loadSharePagePayload()?.ratio
+    return stored && isShareCardRatio(stored) ? stored : 'story'
+  })
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<string | null>(null)
   const captureRef = useRef<HTMLDivElement>(null)
@@ -45,8 +52,8 @@ export function ShareScreenshotPage() {
 
   useEffect(() => {
     if (!payload) return
-    saveSharePagePayload({ result: payload.result, variant })
-  }, [payload, variant])
+    saveSharePagePayload({ result: payload.result, variant, ratio })
+  }, [payload, variant, ratio])
 
   const result: ShareResult | null = payload?.result ?? null
 
@@ -62,7 +69,7 @@ export function ShareScreenshotPage() {
     setBusy(true)
     setNote(null)
     try {
-      const dataUrl = await captureShareCardPng(captureRef.current)
+      const dataUrl = await captureShareCardPng(captureRef.current, ratio)
       await action(dataUrl, result)
     } catch {
       setNote('Could not create image — try again, or screenshot this page')
@@ -75,7 +82,7 @@ export function ShareScreenshotPage() {
     void withCard(async (dataUrl, next) => {
       await downloadDataUrl(
         dataUrl,
-        shareFilename(next.line.id, next.wpm, variant),
+        shareFilename(next.line.id, next.wpm, variant, ratio),
       )
       setNote('Image saved')
     })
@@ -86,7 +93,7 @@ export function ShareScreenshotPage() {
       const outcome = await shareResultImage(
         next,
         dataUrl,
-        shareFilename(next.line.id, next.wpm, variant),
+        shareFilename(next.line.id, next.wpm, variant, ratio),
       )
       setNote(outcome === 'shared' ? 'Shared' : 'Image saved')
     })
@@ -125,6 +132,36 @@ export function ShareScreenshotPage() {
       </header>
 
       <div
+        className="share-format-picker share-shot-format"
+        role="radiogroup"
+        aria-label="Share card format"
+      >
+        {SHARE_CARD_RATIOS.map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            role="radio"
+            aria-checked={ratio === opt.id}
+            className={
+              ratio === opt.id ? 'share-format-opt is-active' : 'share-format-opt'
+            }
+            onClick={() => setRatio(opt.id)}
+          >
+            <span className="share-format-glyph" aria-hidden="true">
+              <span
+                className="share-format-glyph-shape"
+                data-shape={opt.id}
+              />
+            </span>
+            <span className="share-format-copy">
+              <span className="share-format-opt-label">{opt.label}</span>
+              <span className="share-format-opt-blurb">{opt.aspectLabel}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div
         className="share-style-picker share-shot-picker"
         role="radiogroup"
         aria-label="Share card style"
@@ -147,16 +184,25 @@ export function ShareScreenshotPage() {
       </div>
 
       <div className="share-shot-stage">
-        <div className="share-shot-frame-scale">
+        <div className="share-shot-frame-scale" data-ratio={ratio}>
           <div className="share-shot-frame">
-            <ShareCard result={result} variant={variant} />
+            <ShareCard result={result} variant={variant} ratio={ratio} />
           </div>
         </div>
       </div>
 
       {/* Design-size twin for Save / Share — outside the scaled preview */}
-      <div className="share-capture-host" aria-hidden="true">
-        <ShareCard ref={captureRef} result={result} variant={variant} />
+      <div
+        className="share-capture-host"
+        data-ratio={ratio}
+        aria-hidden="true"
+      >
+        <ShareCard
+          ref={captureRef}
+          result={result}
+          variant={variant}
+          ratio={ratio}
+        />
       </div>
 
       <div className="cta-row share-actions share-shot-actions">

@@ -4,6 +4,7 @@ import { formatAccuracy, formatWpm } from '../lib/wpm'
 import {
   formatElapsed,
   formatRaceDevice,
+  type ShareCardRatio,
   type ShareResult,
 } from '../lib/shareCard'
 import { PixelTrain } from './PixelTrain'
@@ -51,6 +52,7 @@ export type ShareCardVariant = (typeof SHARE_CARD_VARIANTS)[number]['id']
 type ShareCardProps = {
   result: ShareResult
   variant?: ShareCardVariant
+  ratio?: ShareCardRatio
 }
 
 /** Max stops shown in neon stations panel (2-col) before ellipsis */
@@ -83,8 +85,51 @@ function DeviceTag({
   )
 }
 
-function NeonScoreBody({ result }: { result: ShareResult }) {
+function NeonScoreBody({
+  result,
+  ratio = 'story',
+}: {
+  result: ShareResult
+  ratio?: ShareCardRatio
+}) {
   const { line, wpm, rawWpm, accuracy, elapsedMs } = result
+
+  /* Feed stamp — score billboard, no train / station grid */
+  if (ratio === 'square') {
+    return (
+      <>
+        <div className="share-card-grid" aria-hidden="true" />
+        <div className="share-card-scan" aria-hidden="true" />
+        <div className="share-card-glow" aria-hidden="true" />
+
+        <header className="sc-sq-neon-head">
+          <BrandMark className="sc-sq-neon-brand" />
+          <DeviceTag device={result.device} />
+        </header>
+
+        <div className="sc-sq-neon-hero">
+          <p className="sc-sq-neon-label">Avg WPM</p>
+          <p className="sc-sq-neon-wpm">{formatWpm(wpm)}</p>
+          <div className="sc-sq-neon-chips">
+            <span>{formatAccuracy(accuracy)}</span>
+            <span aria-hidden="true">·</span>
+            <span>{formatElapsed(elapsedMs)}</span>
+            <span aria-hidden="true">·</span>
+            <span>{formatWpm(rawWpm)} raw</span>
+          </div>
+        </div>
+
+        <footer className="sc-sq-neon-foot">
+          <span className="sc-sq-neon-dot" aria-hidden="true" />
+          <div className="sc-sq-neon-line">
+            <p className="sc-sq-neon-system">{line.system}</p>
+            <p className="sc-sq-neon-name">{line.name}</p>
+          </div>
+        </footer>
+      </>
+    )
+  }
+
   const stations = line.stations
   const preview =
     stations.length <= STATION_PREVIEW_CAP
@@ -159,9 +204,64 @@ function NeonScoreBody({ result }: { result: ShareResult }) {
   )
 }
 
-function RouteClearedBody({ result }: { result: ShareResult }) {
+function RouteClearedBody({
+  result,
+  ratio = 'story',
+}: {
+  result: ShareResult
+  ratio?: ShareCardRatio
+}) {
   const { line, wpm, accuracy, elapsedMs } = result
   const stations = line.stations
+  const origin = stations[0] ?? '—'
+  const dest = stations[stations.length - 1] ?? '—'
+
+  /* Corridor stamp — OD strip + stats, no vertical stop list */
+  if (ratio === 'square') {
+    return (
+      <>
+        <div className="sc-route-bg" aria-hidden="true" />
+        <header className="sc-sq-route-head">
+          <p className="sc-sq-route-kicker">{line.system} · cleared</p>
+          <BrandMark className="sc-sq-route-brand" />
+          <DeviceTag device={result.device} />
+        </header>
+
+        <div className="sc-sq-route-hero">
+          <p className="sc-sq-route-line">{line.name}</p>
+          <p className="sc-sq-route-stops">{stations.length} stops</p>
+        </div>
+
+        <div className="sc-sq-route-od">
+          <span className="sc-sq-route-place">{origin}</span>
+          <span className="sc-sq-route-arrow" aria-hidden="true">
+            →
+          </span>
+          <span className="sc-sq-route-place">{dest}</span>
+        </div>
+
+        <div className="sc-sq-route-stats">
+          <div className="sc-sq-route-stat">
+            <span className="sc-sq-route-stat-label">WPM</span>
+            <span className="sc-sq-route-stat-value">{formatWpm(wpm)}</span>
+          </div>
+          <div className="sc-sq-route-stat">
+            <span className="sc-sq-route-stat-label">Acc</span>
+            <span className="sc-sq-route-stat-value">
+              {formatAccuracy(accuracy)}
+            </span>
+          </div>
+          <div className="sc-sq-route-stat">
+            <span className="sc-sq-route-stat-label">Time</span>
+            <span className="sc-sq-route-stat-value">
+              {formatElapsed(elapsedMs)}
+            </span>
+          </div>
+        </div>
+      </>
+    )
+  }
+
   const show =
     stations.length <= ROUTE_DOT_CAP
       ? stations
@@ -253,7 +353,13 @@ function fitMinimalWpm(el: HTMLElement) {
   el.style.fontSize = `${(basePx * budget) / natural}px`
 }
 
-function MinimalTypeBody({ result }: { result: ShareResult }) {
+function MinimalTypeBody({
+  result,
+  ratio = 'story',
+}: {
+  result: ShareResult
+  ratio?: ShareCardRatio
+}) {
   const { line, wpm, accuracy } = result
   const wpmLabel = formatWpm(wpm)
   const wpmRef = useRef<HTMLParagraphElement>(null)
@@ -271,7 +377,38 @@ function MinimalTypeBody({ result }: { result: ShareResult }) {
     const ro = new ResizeObserver(() => fitMinimalWpm(el))
     ro.observe(hero)
     return () => ro.disconnect()
-  }, [wpmLabel])
+  }, [wpmLabel, ratio])
+
+  if (ratio === 'square') {
+    return (
+      <>
+        <div className="sc-min-texture" aria-hidden="true" />
+        <div className="sc-min-scan" aria-hidden="true" />
+
+        <header className="sc-sq-min-head">
+          <p className="sc-sq-min-brand">StationTypeRace</p>
+          <DeviceTag device={result.device} />
+        </header>
+
+        <div className="sc-sq-min-hero">
+          <p className="sc-sq-min-label">WPM</p>
+          <p className="sc-sq-min-wpm" ref={wpmRef} style={wpmStyle}>
+            {wpmLabel}
+          </p>
+        </div>
+
+        <footer className="sc-sq-min-foot">
+          <span className="sc-sq-min-acc">{formatAccuracy(accuracy)}</span>
+          <span className="sc-sq-min-sep" aria-hidden="true">
+            /
+          </span>
+          <span className="sc-sq-min-line">
+            {line.system} · {line.name}
+          </span>
+        </footer>
+      </>
+    )
+  }
 
   return (
     <>
@@ -302,12 +439,69 @@ function MinimalTypeBody({ result }: { result: ShareResult }) {
   )
 }
 
-function TransitTicketBody({ result }: { result: ShareResult }) {
+function TransitTicketBody({
+  result,
+  ratio = 'story',
+}: {
+  result: ShareResult
+  ratio?: ShareCardRatio
+}) {
   const { line, wpm, accuracy, elapsedMs } = result
   const stations = line.stations
   const origin = stations[0] ?? '—'
   const dest = stations[stations.length - 1] ?? '—'
   const wpmLabel = formatWpm(wpm)
+
+  /* Compact pass — horizontal OD, no barcode / stacked places */
+  if (ratio === 'square') {
+    return (
+      <>
+        <header className="sc-sq-ticket-head">
+          <div className="sc-sq-ticket-brand">
+            <p className="sc-sq-ticket-carrier">
+              <span>StationType</span>
+              <span className="sc-sq-ticket-accent">Race</span>
+            </p>
+            <p className="sc-sq-ticket-pass">Boarding pass</p>
+          </div>
+          <div className="sc-sq-ticket-fare">
+            <span className="sc-sq-ticket-fare-label">WPM</span>
+            <span className="sc-sq-ticket-fare-value">{wpmLabel}</span>
+          </div>
+        </header>
+
+        <div className="sc-sq-ticket-perf" aria-hidden="true" />
+
+        <div className="sc-sq-ticket-body">
+          <p className="sc-sq-ticket-system">{line.system}</p>
+          <p className="sc-sq-ticket-line">{line.name}</p>
+
+          <p className="sc-sq-ticket-path">
+            {origin}
+            <span className="sc-sq-ticket-arrow" aria-hidden="true">
+              →
+            </span>
+            {dest}
+          </p>
+
+          <div className="sc-sq-ticket-meta">
+            <div>
+              <span className="sc-sq-ticket-field">Stops</span>
+              <span className="sc-sq-ticket-val">{stations.length}</span>
+            </div>
+            <div>
+              <span className="sc-sq-ticket-field">Acc</span>
+              <span className="sc-sq-ticket-val">{formatAccuracy(accuracy)}</span>
+            </div>
+            <div>
+              <span className="sc-sq-ticket-field">Time</span>
+              <span className="sc-sq-ticket-val">{formatElapsed(elapsedMs)}</span>
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -373,7 +567,8 @@ function TransitTicketBody({ result }: { result: ShareResult }) {
           ))}
         </div>
         <p className="sc-ticket-serial">
-          STR · {line.id.toUpperCase()} · {formatRaceDevice(result.device).toUpperCase()} · JAKARTA
+          STR · {line.id.toUpperCase()} ·{' '}
+          {formatRaceDevice(result.device).toUpperCase()} · JAKARTA
         </p>
       </div>
     </>
@@ -381,8 +576,50 @@ function TransitTicketBody({ result }: { result: ShareResult }) {
 }
 
 /** CSS/SVG Monas silhouette — WPM as the glowing flame tip */
-function MonasPosterBody({ result }: { result: ShareResult }) {
+function MonasPosterBody({
+  result,
+  ratio = 'story',
+}: {
+  result: ShareResult
+  ratio?: ShareCardRatio
+}) {
   const { line, wpm, accuracy, elapsedMs } = result
+
+  /* Night score — flame WPM only, no tall monument */
+  if (ratio === 'square') {
+    return (
+      <>
+        <div className="sc-monas-sky" aria-hidden="true" />
+        <div className="sc-monas-stars" aria-hidden="true" />
+        <div className="sc-monas-glow" aria-hidden="true" />
+
+        <header className="sc-sq-monas-head">
+          <p className="sc-sq-monas-kicker">Jakarta · cleared</p>
+          <BrandMark className="sc-sq-monas-brand" />
+          <DeviceTag device={result.device} />
+        </header>
+
+        <div className="sc-sq-monas-hero">
+          <p className="sc-sq-monas-wpm" aria-label={`${formatWpm(wpm)} WPM`}>
+            <span className="sc-sq-monas-num">{formatWpm(wpm)}</span>
+            <span className="sc-sq-monas-unit">WPM</span>
+          </p>
+          <span className="sc-sq-monas-flame" aria-hidden="true" />
+        </div>
+
+        <footer className="sc-sq-monas-foot">
+          <p className="sc-sq-monas-line">{line.name}</p>
+          <p className="sc-sq-monas-meta">
+            {formatAccuracy(accuracy)}
+            <span aria-hidden="true"> · </span>
+            {formatElapsed(elapsedMs)}
+            <span aria-hidden="true"> · </span>
+            {line.stations.length} stops
+          </p>
+        </footer>
+      </>
+    )
+  }
 
   return (
     <>
@@ -406,7 +643,6 @@ function MonasPosterBody({ result }: { result: ShareResult }) {
           viewBox="0 0 120 200"
           aria-hidden="true"
         >
-          {/* Flame / tip light */}
           <ellipse
             className="sc-monas-flame"
             cx="60"
@@ -415,12 +651,10 @@ function MonasPosterBody({ result }: { result: ShareResult }) {
             ry="14"
           />
           <ellipse cx="60" cy="16" rx="4" ry="7" fill="#fff8e0" opacity="0.85" />
-          {/* Obelisk shaft */}
           <path
             className="sc-monas-shaft"
             d="M54 34 L66 34 L72 148 L48 148 Z"
           />
-          {/* Mid cupola ring */}
           <rect
             className="sc-monas-ring"
             x="46"
@@ -429,12 +663,10 @@ function MonasPosterBody({ result }: { result: ShareResult }) {
             height="8"
             rx="1"
           />
-          {/* Observation cupola */}
           <path
             className="sc-monas-cupola"
             d="M42 148 L78 148 L74 162 L46 162 Z"
           />
-          {/* Base pedestal */}
           <path
             className="sc-monas-base"
             d="M28 162 L92 162 L98 178 L22 178 Z"
@@ -446,7 +678,6 @@ function MonasPosterBody({ result }: { result: ShareResult }) {
             width="92"
             height="10"
           />
-          {/* Plaza ellipse */}
           <ellipse
             className="sc-monas-plaza"
             cx="60"
@@ -488,11 +719,48 @@ function countFullyVisibleChips(list: HTMLElement): number {
   return n
 }
 
-function PixelRailBody({ result }: { result: ShareResult }) {
+function PixelRailSquareBody({ result }: { result: ShareResult }) {
+  const { line, wpm, accuracy, elapsedMs } = result
+
+  return (
+    <>
+      <div className="sc-pixel-grid" aria-hidden="true" />
+      <header className="sc-sq-pixel-head">
+        <BrandMark className="sc-sq-pixel-brand" />
+        <p className="sc-sq-pixel-kicker">PIXEL CLEAR</p>
+      </header>
+
+      <div className="sc-sq-pixel-stage">
+        <PixelTrain color={line.color} className="sc-sq-pixel-train" />
+        <div className="sc-sq-pixel-track" aria-hidden="true" />
+      </div>
+
+      <div className="sc-sq-pixel-badge">
+        <span className="sc-sq-pixel-badge-label">WPM</span>
+        <span className="sc-sq-pixel-badge-wpm">{formatWpm(wpm)}</span>
+      </div>
+
+      <footer className="sc-sq-pixel-foot">
+        <p className="sc-sq-pixel-line">
+          <span className="sc-sq-pixel-dot" aria-hidden="true" />
+          {line.name}
+        </p>
+        <p className="sc-sq-pixel-meta">
+          {formatAccuracy(accuracy)}
+          <span aria-hidden="true"> · </span>
+          {formatElapsed(elapsedMs)}
+          <span aria-hidden="true"> · </span>
+          {formatRaceDevice(result.device)}
+        </p>
+      </footer>
+    </>
+  )
+}
+
+function PixelRailStoryBody({ result }: { result: ShareResult }) {
   const { line, wpm, accuracy, elapsedMs } = result
   const stations = line.stations
   const listRef = useRef<HTMLUListElement>(null)
-  /** Station names shown before an optional +N overflow chip. */
   const [nameCount, setNameCount] = useState(stations.length)
 
   const preview =
@@ -513,7 +781,6 @@ function PixelRailBody({ result }: { result: ShareResult }) {
 
     if (nameCount >= stations.length) {
       if (fit < childCount) {
-        // Leave one slot for the +N chip.
         setNameCount(Math.max(0, fit - 1))
       }
       return
@@ -560,9 +827,23 @@ function PixelRailBody({ result }: { result: ShareResult }) {
   )
 }
 
-/** Fixed-aspect neon card used on-screen and for PNG export (Instagram Story 9:16) */
+function PixelRailBody({
+  result,
+  ratio = 'story',
+}: {
+  result: ShareResult
+  ratio?: ShareCardRatio
+}) {
+  return ratio === 'square' ? (
+    <PixelRailSquareBody result={result} />
+  ) : (
+    <PixelRailStoryBody result={result} />
+  )
+}
+
+/** Fixed-aspect card used on-screen and for PNG export (Story 9:16 or Square 1:1) */
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  function ShareCard({ result, variant = 'neon' }, ref) {
+  function ShareCard({ result, variant = 'neon', ratio = 'story' }, ref) {
     const { line } = result
 
     return (
@@ -572,13 +853,24 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         style={lineStyle(line.color)}
         data-share-card
         data-variant={variant}
+        data-ratio={ratio}
       >
-        {variant === 'neon' && <NeonScoreBody result={result} />}
-        {variant === 'route' && <RouteClearedBody result={result} />}
-        {variant === 'minimal' && <MinimalTypeBody result={result} />}
-        {variant === 'ticket' && <TransitTicketBody result={result} />}
-        {variant === 'monas' && <MonasPosterBody result={result} />}
-        {variant === 'pixel' && <PixelRailBody result={result} />}
+        {variant === 'neon' && <NeonScoreBody result={result} ratio={ratio} />}
+        {variant === 'route' && (
+          <RouteClearedBody result={result} ratio={ratio} />
+        )}
+        {variant === 'minimal' && (
+          <MinimalTypeBody result={result} ratio={ratio} />
+        )}
+        {variant === 'ticket' && (
+          <TransitTicketBody result={result} ratio={ratio} />
+        )}
+        {variant === 'monas' && (
+          <MonasPosterBody result={result} ratio={ratio} />
+        )}
+        {variant === 'pixel' && (
+          <PixelRailBody result={result} ratio={ratio} />
+        )}
       </div>
     )
   },

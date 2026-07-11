@@ -15,11 +15,35 @@ export type ShareResult = {
   device: RaceDevice
 }
 
+/** Export canvas format — Story (9:16) or Square (1:1). */
+export type ShareCardRatio = 'story' | 'square'
+
+export const SHARE_CARD_RATIOS = [
+  {
+    id: 'story' as const,
+    label: 'Story',
+    blurb: '9:16 · Reels & Stories',
+    aspectLabel: '9:16',
+  },
+  {
+    id: 'square' as const,
+    label: 'Square',
+    blurb: '1:1 · Feed & posts',
+    aspectLabel: '1:1',
+  },
+] as const
+
+export function isShareCardRatio(value: string): value is ShareCardRatio {
+  return SHARE_CARD_RATIOS.some((opt) => opt.id === value)
+}
+
 /** Payload for the dedicated screenshot page (`#/share`). */
 export type SharePagePayload = {
   result: ShareResult
   /** Matches `ShareCardVariant` ids from ShareCard.tsx */
   variant: string
+  /** Defaults to story when missing (older session payloads). */
+  ratio?: ShareCardRatio
 }
 
 const SHARE_PAGE_STORAGE_KEY = 'str-share-page-v1'
@@ -84,11 +108,28 @@ export function shareCaption(result: ShareResult): string {
 
 /** Canonical on-screen + export CSS width (cqw typography is keyed to this). */
 export const SHARE_DESIGN_WIDTH = 280
-/** 9:16 Instagram Stories portrait */
+/** 9:16 Instagram Stories portrait (default) */
 export const SHARE_DESIGN_HEIGHT = Math.round((SHARE_DESIGN_WIDTH * 16) / 9)
-/** Final PNG pixel width */
-const STORY_WIDTH = 1080
-const SHARE_PIXEL_RATIO = STORY_WIDTH / SHARE_DESIGN_WIDTH
+/** Final PNG pixel width (both formats) */
+const EXPORT_WIDTH = 1080
+const SHARE_PIXEL_RATIO = EXPORT_WIDTH / SHARE_DESIGN_WIDTH
+
+export function shareDesignHeight(ratio: ShareCardRatio = 'story'): number {
+  return ratio === 'square'
+    ? SHARE_DESIGN_WIDTH
+    : SHARE_DESIGN_HEIGHT
+}
+
+export function shareExportSize(ratio: ShareCardRatio = 'story'): {
+  width: number
+  height: number
+} {
+  const designH = shareDesignHeight(ratio)
+  return {
+    width: EXPORT_WIDTH,
+    height: Math.round(designH * SHARE_PIXEL_RATIO),
+  }
+}
 
 /** Layout/typography properties that must be px-frozen before html-to-image. */
 const FREEZE_STYLE_PROPS = [
@@ -782,13 +823,23 @@ function restoreSubtreeInline(
   }
 }
 
-function pinDesignBox(el: HTMLElement) {
+function resolveCaptureRatio(node: HTMLElement): ShareCardRatio {
+  const fromCard = node.getAttribute('data-ratio')
+  if (fromCard && isShareCardRatio(fromCard)) return fromCard
+  const host = node.closest('.share-capture-host, .share-card-frame-scale, .share-shot-frame-scale')
+  const fromHost = host?.getAttribute('data-ratio')
+  if (fromHost && isShareCardRatio(fromHost)) return fromHost
+  return 'story'
+}
+
+function pinDesignBox(el: HTMLElement, ratio: ShareCardRatio = 'story') {
+  const height = shareDesignHeight(ratio)
   el.style.width = `${SHARE_DESIGN_WIDTH}px`
   el.style.maxWidth = `${SHARE_DESIGN_WIDTH}px`
   el.style.minWidth = `${SHARE_DESIGN_WIDTH}px`
-  el.style.height = `${SHARE_DESIGN_HEIGHT}px`
-  el.style.maxHeight = `${SHARE_DESIGN_HEIGHT}px`
-  el.style.minHeight = `${SHARE_DESIGN_HEIGHT}px`
+  el.style.height = `${height}px`
+  el.style.maxHeight = `${height}px`
+  el.style.minHeight = `${height}px`
   el.style.transform = 'none'
   el.style.margin = '0'
   el.style.zoom = '1'
@@ -805,9 +856,11 @@ function pinDesignBox(el: HTMLElement) {
  */
 export async function captureShareCardPng(
   node: HTMLElement,
+  ratio: ShareCardRatio = resolveCaptureRatio(node),
 ): Promise<string> {
   await waitForShareFonts()
 
+  const designHeight = shareDesignHeight(ratio)
   const host = node.closest('.share-capture-host') as HTMLElement | null
   const frame = node.closest('.share-card-frame') as HTMLElement | null
   const subtreeSnap = snapshotSubtreeInline(node)
@@ -816,7 +869,7 @@ export async function captureShareCardPng(
 
   if (host) {
     host.style.width = `${SHARE_DESIGN_WIDTH}px`
-    host.style.height = `${SHARE_DESIGN_HEIGHT}px`
+    host.style.height = `${designHeight}px`
     host.style.transform = 'none'
     host.style.filter = 'none'
     host.style.opacity = '1'
@@ -828,7 +881,7 @@ export async function captureShareCardPng(
     frame.style.transform = 'none'
     frame.style.filter = 'none'
   }
-  pinDesignBox(node)
+  pinDesignBox(node, ratio)
 
   try {
     // Settle container queries + React layout effects (pixel chip fitting).
@@ -854,13 +907,13 @@ export async function captureShareCardPng(
       // again on mobile WebKit/Chrome and produces ~4k PNGs.
       pixelRatio: SHARE_PIXEL_RATIO,
       width: SHARE_DESIGN_WIDTH,
-      height: SHARE_DESIGN_HEIGHT,
+      height: designHeight,
       backgroundColor: '#050b12',
       preferredFontFormat: 'woff2' as const,
       includeStyleProperties,
       style: {
         width: `${SHARE_DESIGN_WIDTH}px`,
-        height: `${SHARE_DESIGN_HEIGHT}px`,
+        height: `${designHeight}px`,
         maxWidth: `${SHARE_DESIGN_WIDTH}px`,
         minWidth: `${SHARE_DESIGN_WIDTH}px`,
         transform: 'none',
@@ -957,18 +1010,20 @@ export function shareFilename(
   lineId: string,
   wpm: number,
   variant?: string,
+  ratio?: ShareCardRatio,
 ): string {
   const safeLine = lineId.replace(/[^a-z0-9_-]+/gi, '-').toLowerCase()
   const safeVariant = (variant ?? 'card')
     .replace(/[^a-z0-9_-]+/gi, '-')
     .toLowerCase()
+  const safeRatio = ratio === 'square' ? '1x1' : '9x16'
   const stamp = new Date()
     .toISOString()
     .replace(/[:.]/g, '-')
     .replace('T', '-')
     .slice(0, 19)
   const uniq = Math.random().toString(36).slice(2, 8)
-  return `station-type-race-${safeLine}-${safeVariant}-${wpm}wpm-${stamp}-${uniq}.png`
+  return `station-type-race-${safeLine}-${safeVariant}-${safeRatio}-${wpm}wpm-${stamp}-${uniq}.png`
 }
 
 export function isSharePageHash(hash = window.location.hash): boolean {
@@ -989,6 +1044,9 @@ export function loadSharePagePayload(): SharePagePayload | null {
     if (!raw) return null
     const parsed = JSON.parse(raw) as SharePagePayload
     if (!parsed?.result?.line?.id || !parsed.variant) return null
+    if (parsed.ratio && !isShareCardRatio(parsed.ratio)) {
+      parsed.ratio = 'story'
+    }
     return parsed
   } catch {
     return null

@@ -29,9 +29,12 @@ import {
   detectRaceDevice,
   downloadDataUrl,
   openShareScreenshotPage,
+  shareExportSize,
   shareFilename,
   shareResultImage,
+  SHARE_CARD_RATIOS,
   type RaceDevice,
+  type ShareCardRatio,
   type ShareResult,
 } from './lib/shareCard'
 import {
@@ -130,6 +133,7 @@ export default function App() {
   const [shareBusy, setShareBusy] = useState(false)
   const [shareNote, setShareNote] = useState<string | null>(null)
   const [shareVariant, setShareVariant] = useState<ShareCardVariant>('neon')
+  const [shareRatio, setShareRatio] = useState<ShareCardRatio>('story')
   /** Pre-rendered PNG for the visible preview — same bytes Save/Share use. */
   const [sharePngDataUrl, setSharePngDataUrl] = useState<string | null>(null)
   const [sharePngPreparing, setSharePngPreparing] = useState(false)
@@ -601,7 +605,7 @@ export default function App() {
     try {
       // Prefer the already-rendered preview PNG so Save matches what you see.
       const dataUrl =
-        sharePngDataUrl ?? (await captureShareCardPng(captureNode))
+        sharePngDataUrl ?? (await captureShareCardPng(captureNode, shareRatio))
       await action(dataUrl, result)
     } catch {
       setShareNote('Could not create image — try Full card page')
@@ -612,7 +616,12 @@ export default function App() {
 
   function saveShareImage() {
     void withShareCard(async (dataUrl, result) => {
-      const filename = shareFilename(result.line.id, result.wpm, shareVariant)
+      const filename = shareFilename(
+        result.line.id,
+        result.wpm,
+        shareVariant,
+        shareRatio,
+      )
       await downloadDataUrl(dataUrl, filename)
       setShareNote('Image saved')
     })
@@ -623,7 +632,7 @@ export default function App() {
       const outcome = await shareResultImage(
         result,
         dataUrl,
-        shareFilename(result.line.id, result.wpm, shareVariant),
+        shareFilename(result.line.id, result.wpm, shareVariant, shareRatio),
       )
       setShareNote(outcome === 'shared' ? 'Shared' : 'Image saved')
     })
@@ -642,6 +651,7 @@ export default function App() {
         device: race.device,
       },
       variant: shareVariant,
+      ratio: shareRatio,
     })
   }
 
@@ -719,7 +729,7 @@ export default function App() {
           return
         }
         try {
-          const dataUrl = await captureShareCardPng(node)
+          const dataUrl = await captureShareCardPng(node, shareRatio)
           if (gen !== sharePngGenRef.current) return
           setSharePngDataUrl(dataUrl)
         } catch {
@@ -737,6 +747,7 @@ export default function App() {
   }, [
     phase,
     shareVariant,
+    shareRatio,
     shareResult?.line.id,
     shareResult?.wpm,
     shareResult?.accuracy,
@@ -1084,6 +1095,40 @@ export default function App() {
           <div className="results-board">
             <div className="results-share-col">
               <div
+                className="share-format-picker"
+                role="radiogroup"
+                aria-label="Share card format"
+              >
+                {SHARE_CARD_RATIOS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={shareRatio === opt.id}
+                    className={
+                      shareRatio === opt.id
+                        ? 'share-format-opt is-active'
+                        : 'share-format-opt'
+                    }
+                    onClick={() => setShareRatio(opt.id)}
+                  >
+                    <span className="share-format-glyph" aria-hidden="true">
+                      <span
+                        className="share-format-glyph-shape"
+                        data-shape={opt.id}
+                      />
+                    </span>
+                    <span className="share-format-copy">
+                      <span className="share-format-opt-label">{opt.label}</span>
+                      <span className="share-format-opt-blurb">
+                        {opt.aspectLabel}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div
                 className="share-style-picker"
                 role="radiogroup"
                 aria-label="Share card style"
@@ -1113,14 +1158,15 @@ export default function App() {
                     ? 'share-card-frame-scale is-preparing'
                     : 'share-card-frame-scale'
                 }
+                data-ratio={shareRatio}
               >
                 {sharePngDataUrl ? (
                   <img
                     className="share-card-png-preview"
                     src={sharePngDataUrl}
                     alt="Share card — long-press to save on mobile"
-                    width={1080}
-                    height={1920}
+                    width={shareExportSize(shareRatio).width}
+                    height={shareExportSize(shareRatio).height}
                     draggable={false}
                   />
                 ) : (
@@ -1129,17 +1175,23 @@ export default function App() {
                       ref={shareCardRef}
                       result={shareResult}
                       variant={shareVariant}
+                      ratio={shareRatio}
                     />
                   </div>
                 )}
               </div>
 
               {/* Design-size twin for PNG export — no preview scale / drop-shadow */}
-              <div className="share-capture-host" aria-hidden="true">
+              <div
+                className="share-capture-host"
+                data-ratio={shareRatio}
+                aria-hidden="true"
+              >
                 <ShareCard
                   ref={shareCaptureRef}
                   result={shareResult}
                   variant={shareVariant}
+                  ratio={shareRatio}
                 />
               </div>
 
