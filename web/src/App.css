@@ -1155,7 +1155,6 @@ input {
 
 .station-progress__track {
   --station-count: 1;
-  --station-index: 0;
   position: relative;
   height: 4.1rem;
   margin-inline: clamp(0.75rem, 3vw, 1.5rem);
@@ -1179,24 +1178,24 @@ input {
   left: calc(100% / var(--station-count) / 2);
   top: calc(1.55rem + 0.28rem);
   height: 2px;
-  width: calc(100% / var(--station-count) * var(--station-index));
+  width: 0;
   background: var(--line);
   border-radius: 1px;
   box-shadow:
     0 0 10px color-mix(in srgb, var(--line) 55%, transparent),
     0 0 22px color-mix(in srgb, var(--line) 25%, transparent);
-  transition: width 0.1s linear;
+  will-change: width;
 }
 
 .station-progress__head {
   position: absolute;
   top: 0.05rem;
-  left: calc(100% / var(--station-count) * (var(--station-index) + 0.5));
-  transform: translateX(-50%);
+  left: 0;
+  transform: translate3d(0, 0, 0) translateX(-50%);
   z-index: 3;
-  transition: left 0.1s linear;
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--line) 55%, transparent));
   pointer-events: none;
+  will-change: transform;
 }
 
 .station-progress__train {
