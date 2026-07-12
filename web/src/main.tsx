@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './App.css'
 import App from './App.tsx'
+import { BuildWatermark } from './components/BuildWatermark.tsx'
 import { ShareScreenshotPage } from './components/ShareScreenshotPage.tsx'
 import { isSharePageHash } from './lib/shareCard'
 
@@ -22,6 +23,7 @@ function Root() {
         <App />
       </div>
       {sharePage ? <ShareScreenshotPage /> : null}
+      <BuildWatermark />
     </>
   )
 }
