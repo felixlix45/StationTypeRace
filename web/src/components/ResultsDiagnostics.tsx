@@ -191,7 +191,11 @@ function StationWpmChart({ samples }: { samples: StationSample[] }) {
                   tabIndex={0}
                   role="button"
                   aria-label={`${s.name}: ${s.stationWpm} WPM, ${
-                    s.perfect ? 'perfect' : 'not credited'
+                    s.perfect
+                      ? 'perfect'
+                      : s.creditedChars > 0
+                        ? 'partial credit'
+                        : 'not credited'
                   }, ${s.incorrectDelta} errors`}
                   aria-pressed={pinnedIndex === i}
                   aria-describedby={isActive ? tipId : undefined}
@@ -244,7 +248,7 @@ function StationWpmChart({ samples }: { samples: StationSample[] }) {
           'results-chart-tip',
           active ? 'is-visible' : 'is-idle',
           pinnedIndex !== null ? 'is-pinned' : '',
-          active && !active.perfect ? 'is-missed' : '',
+          active && active.creditedChars === 0 ? 'is-missed' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -282,8 +286,18 @@ function StationWpmChart({ samples }: { samples: StationSample[] }) {
                 </div>
                 <div>
                   <dt>Credit</dt>
-                  <dd className={active.perfect ? 'is-ok' : 'is-bad'}>
-                    {active.perfect ? 'Perfect' : 'Missed'}
+                  <dd
+                    className={
+                      active.perfect || active.creditedChars > 0
+                        ? 'is-ok'
+                        : 'is-bad'
+                    }
+                  >
+                    {active.perfect
+                      ? 'Perfect'
+                      : active.creditedChars > 0
+                        ? 'Partial'
+                        : 'Missed'}
                   </dd>
                 </div>
               </dl>
@@ -373,7 +387,7 @@ export function ResultsDiagnostics({
         <div className="results-perf-chart-head">
           <p className="results-perf-chart-label">WPM by station</p>
           <p className="results-perf-chart-hint">
-            Hover or tap a stop · only perfect credits race WPM
+            Hover or tap a stop · mistyped words are not credited
           </p>
         </div>
         <StationWpmChart samples={samples} />
