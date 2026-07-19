@@ -1,0 +1,283 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "kind": "path"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            106.82553,
+            -6.20483
+          ],
+          [
+            106.83023,
+            -6.20932
+          ],
+          [
+            106.83224,
+            -6.22161
+          ],
+          [
+            106.8332,
+            -6.22877
+          ],
+          [
+            106.83851,
+            -6.24214
+          ],
+          [
+            106.85707,
+            -6.24348
+          ],
+          [
+            106.86397,
+            -6.24345
+          ],
+          [
+            106.8587,
+            -6.2542
+          ],
+          [
+            106.88729,
+            -6.24587
+          ],
+          [
+            106.92792,
+            -6.25775
+          ],
+          [
+            106.95187,
+            -6.2566
+          ],
+          [
+            106.96321,
+            -6.25465
+          ],
+          [
+            106.99042,
+            -6.25295
+          ],
+          [
+            107.02167,
+            -6.26411
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Dukuh Atas BNI",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.82553,
+          -6.20483
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Setiabudi",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.83023,
+          -6.20932
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Rasuna Said",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.83224,
+          -6.22161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Kuningan",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8332,
+          -6.22877
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Pancoran",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.83851,
+          -6.24214
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Cikoko",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.85707,
+          -6.24348
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Ciliwung",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.86397,
+          -6.24345
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Cawang",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8587,
+          -6.2542
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Halim",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.88729,
+          -6.24587
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Jati Bening Baru",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.92792,
+          -6.25775
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Cikunir 1",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.95187,
+          -6.2566
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Cikunir 2",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.96321,
+          -6.25465
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Bekasi Barat",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.99042,
+          -6.25295
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-bekasi",
+        "name": "Jati Mulya",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          107.02167,
+          -6.26411
+        ]
+      }
+    }
+  ]
+}

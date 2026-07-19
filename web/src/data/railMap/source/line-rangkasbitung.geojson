@@ -1,0 +1,397 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "kind": "path"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            106.81089,
+            -6.18571
+          ],
+          [
+            106.79723,
+            -6.20792
+          ],
+          [
+            106.78253,
+            -6.23723
+          ],
+          [
+            106.74469,
+            -6.27668
+          ],
+          [
+            106.72915,
+            -6.28858
+          ],
+          [
+            106.71265,
+            -6.29684
+          ],
+          [
+            106.67615,
+            -6.31488
+          ],
+          [
+            106.66558,
+            -6.32015
+          ],
+          [
+            106.64163,
+            -6.32444
+          ],
+          [
+            106.61897,
+            -6.32968
+          ],
+          [
+            106.60661,
+            -6.33499
+          ],
+          [
+            106.56995,
+            -6.34426
+          ],
+          [
+            106.50964,
+            -6.35427
+          ],
+          [
+            106.49256,
+            -6.33797
+          ],
+          [
+            106.46166,
+            -6.32732
+          ],
+          [
+            106.43406,
+            -6.32884
+          ],
+          [
+            106.41165,
+            -6.33574
+          ],
+          [
+            106.39648,
+            -6.3325
+          ],
+          [
+            106.33267,
+            -6.33506
+          ],
+          [
+            106.25153,
+            -6.35278
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Tanah Abang",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.81089,
+          -6.18571
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Palmerah",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.79723,
+          -6.20792
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Kebayoran",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.78253,
+          -6.23723
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Pondok Ranji",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.74469,
+          -6.27668
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Jurangmangu",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.72915,
+          -6.28858
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Sudimara",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.71265,
+          -6.29684
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Rawa Buntu",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.67615,
+          -6.31488
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Serpong",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.66558,
+          -6.32015
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Cisauk",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.64163,
+          -6.32444
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Cicayur",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.61897,
+          -6.32968
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Jatake",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.60661,
+          -6.33499
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Parung Panjang",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.56995,
+          -6.34426
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Cilejit",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.50964,
+          -6.35427
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Daru",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.49256,
+          -6.33797
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Tenjo",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.46166,
+          -6.32732
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Tigaraksa",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.43406,
+          -6.32884
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Cikoya",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.41165,
+          -6.33574
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Maja",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.39648,
+          -6.3325
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Citeras",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.33267,
+          -6.33506
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "rangkasbitung",
+        "name": "Rangkasbitung",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.25153,
+          -6.35278
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "kind": "path"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            106.82553,
+            -6.20483
+          ],
+          [
+            106.83023,
+            -6.20932
+          ],
+          [
+            106.83224,
+            -6.22161
+          ],
+          [
+            106.8332,
+            -6.22877
+          ],
+          [
+            106.83851,
+            -6.24214
+          ],
+          [
+            106.85707,
+            -6.24348
+          ],
+          [
+            106.86397,
+            -6.24345
+          ],
+          [
+            106.8587,
+            -6.2542
+          ],
+          [
+            106.88056,
+            -6.29291
+          ],
+          [
+            106.88438,
+            -6.30955
+          ],
+          [
+            106.88664,
+            -6.32377
+          ],
+          [
+            106.89567,
+            -6.37389
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "name": "Dukuh Atas BNI",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.82553,
+          -6.20483
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "name": "Setiabudi",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.83023,
+          -6.20932
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "name": "Rasuna Said",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.83224,
+          -6.22161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "name": "Kuningan",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8332,
+          -6.22877
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "name": "Pancoran",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.83851,
+          -6.24214
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "name": "Cikoko",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.85707,
+          -6.24348
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "name": "Ciliwung",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.86397,
+          -6.24345
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "name": "Cawang",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8587,
+          -6.2542
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "name": "TMII",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.88056,
+          -6.29291
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "name": "Kampung Rambutan",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.88438,
+          -6.30955
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "name": "Ciracas",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.88664,
+          -6.32377
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-cibubur",
+        "name": "Harjamukti",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.89567,
+          -6.37389
+        ]
+      }
+    }
+  ]
+}

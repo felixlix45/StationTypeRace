@@ -1,0 +1,112 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tanjung-priok",
+        "kind": "path"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            106.81462,
+            -6.13758
+          ],
+          [
+            106.82849,
+            -6.1327
+          ],
+          [
+            106.84514,
+            -6.12812
+          ],
+          [
+            106.86136,
+            -6.12282
+          ],
+          [
+            106.8815,
+            -6.11069
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tanjung-priok",
+        "name": "Jakarta Kota",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.81462,
+          -6.13758
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tanjung-priok",
+        "name": "Kampung Bandan",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.82849,
+          -6.1327
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tanjung-priok",
+        "name": "Ancol",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.84514,
+          -6.12812
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tanjung-priok",
+        "name": "Jakarta International Stadium",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.86136,
+          -6.12282
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tanjung-priok",
+        "name": "Tanjung Priok",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8815,
+          -6.11069
+        ]
+      }
+    }
+  ]
+}

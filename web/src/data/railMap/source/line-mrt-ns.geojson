@@ -1,0 +1,264 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "kind": "path"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            106.77494,
+            -6.28927
+          ],
+          [
+            106.79246,
+            -6.29245
+          ],
+          [
+            106.79732,
+            -6.27836
+          ],
+          [
+            106.79733,
+            -6.26669
+          ],
+          [
+            106.79714,
+            -6.25578
+          ],
+          [
+            106.79813,
+            -6.24446
+          ],
+          [
+            106.79845,
+            -6.23877
+          ],
+          [
+            106.80249,
+            -6.22673
+          ],
+          [
+            106.80862,
+            -6.22239
+          ],
+          [
+            106.81795,
+            -6.21503
+          ],
+          [
+            106.83023,
+            -6.20932
+          ],
+          [
+            106.82553,
+            -6.20483
+          ],
+          [
+            106.82301,
+            -6.19186
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "Lebak Bulus",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.77494,
+          -6.28927
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "Fatmawati",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.79246,
+          -6.29245
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "Cipete Raya",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.79732,
+          -6.27836
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "Haji Nawi",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.79733,
+          -6.26669
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "Blok A",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.79714,
+          -6.25578
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "Blok M",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.79813,
+          -6.24446
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "ASEAN",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.79845,
+          -6.23877
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "Senayan",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.80249,
+          -6.22673
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "Istora",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.80862,
+          -6.22239
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "Bendungan Hilir",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.81795,
+          -6.21503
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "Setiabudi",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.83023,
+          -6.20932
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "Dukuh Atas",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.82553,
+          -6.20483
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "mrt-ns",
+        "name": "Bundaran HI",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.82301,
+          -6.19186
+        ]
+      }
+    }
+  ]
+}
