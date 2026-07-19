@@ -1186,12 +1186,13 @@ input {
   margin-inline: clamp(0.75rem, 3vw, 1.5rem);
   padding-top: 1.55rem;
   padding-bottom: 1.35rem;
+  padding-inline: calc(var(--station-slot) / 2);
 }
 
 .station-progress__rail {
   position: absolute;
-  left: calc(100% / var(--station-count) / 2);
-  right: calc(100% / var(--station-count) / 2);
+  left: calc(var(--station-slot) / 2);
+  right: calc(var(--station-slot) / 2);
   top: calc(1.55rem + 0.28rem);
   height: 2px;
   background: color-mix(in srgb, var(--paper) 16%, transparent);
@@ -1201,7 +1202,7 @@ input {
 
 .station-progress__fill {
   position: absolute;
-  left: calc(100% / var(--station-count) / 2);
+  left: calc(var(--station-slot) / 2);
   top: calc(1.55rem + 0.28rem);
   height: 2px;
   width: 0;
@@ -1235,21 +1236,61 @@ input {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  align-items: flex-start;
-  position: relative;
+  position: absolute;
+  left: calc(var(--station-slot) / 2);
+  right: calc(var(--station-slot) / 2);
+  top: 0;
+  bottom: 0;
   z-index: 1;
-  height: 100%;
 }
 
 .station-progress__stop {
-  flex: 1 0 var(--station-slot);
+  position: absolute;
+  top: 1.55rem;
   width: var(--station-slot);
-  min-width: var(--station-slot);
+  margin: 0;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
+}
+
+.station-progress__stop.is-start {
+  width: var(--station-slot);
+}
+
+.station-progress__gaps {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.station-progress__gap-km {
+  position: absolute;
+  top: calc(1.55rem + 0.28rem);
+  left: 0;
+  transform: translate(-50%, -50%);
+  padding: 0.08rem 0.28rem;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--fog) 72%, var(--paper));
+  background: color-mix(in srgb, var(--ink) 72%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 90%, transparent);
+}
+
+.station-progress__gap-km.is-current {
+  color: color-mix(in srgb, var(--line) 70%, var(--paper));
+  background: color-mix(in srgb, var(--ink) 78%, transparent);
+}
+
+.station-progress.is-dense .station-progress__gap-km {
+  font-size: 0.46rem;
+  padding: 0.06rem 0.22rem;
 }
 
 .station-progress__label {

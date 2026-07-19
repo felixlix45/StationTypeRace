@@ -1,13 +1,18 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import type { CSSProperties } from 'react'
+import type { StationLine } from '../data/stations'
+import {
+  nodeKmOffsets,
+  startToFirstKm,
+  totalKm,
+} from '../lib/stationDistances'
 import { PixelTrainHead } from './PixelTrain'
 
 type StationProgressRailProps = {
-  stations: string[]
+  line: StationLine
   currentIndex: number
   /** Typed length on the current station (drives in-progress head/fill). */
   typedLength?: number
-  color: string
 }
 
 function shortStationName(name: string, maxLen: number): string {
@@ -21,6 +26,25 @@ function shouldShowLabel(index: number, current: number, total: number): boolean
   if (total <= 12) return true
   if (index === 0 || index === total - 1) return true
   return Math.abs(index - current) <= 1
+}
+
+function formatGapKm(km: number): string {
+  const rounded = Math.round(km * 10) / 10
+  if (Number.isInteger(rounded)) return `${rounded} km`
+  return `${rounded.toFixed(1)} km`
+}
+
+/** Mid-rail distance chips — full on short lines; nearby/long hops when dense. */
+function shouldShowGapKm(
+  stationIndex: number,
+  current: number,
+  dense: boolean,
+  km: number,
+): boolean {
+  if (km < 0.5) return false
+  if (!dense) return true
+  if (km >= 4) return true
+  return Math.abs(stationIndex - current) <= 1
 }
 
 /** How far (0–1) to creep into the next character slot while idle. */
@@ -43,20 +67,42 @@ function stationPoints(typedLength: number, targetLen: number) {
   if (targetLen <= 0) return { committed: 0, idle: 0 }
   const typed = Math.min(Math.max(typedLength, 0), targetLen)
   const committed = typed / targetLen
-  // Partway to the next char only — never the full next point until they type it.
   const idle =
     typed >= targetLen ? 1 : Math.min((typed + CREEP_FRACTION) / targetLen, 1)
   return { committed, idle }
 }
 
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t
+}
+
+/** Map route km onto pixel X using measured stop centers. */
+function kmToX(km: number, offsets: number[], centers: number[]): number {
+  if (centers.length === 0) return 0
+  if (centers.length === 1) return centers[0]!
+  const maxKm = offsets[offsets.length - 1] ?? 0
+  const clamped = Math.min(Math.max(km, 0), maxKm)
+  let i = 0
+  while (i < offsets.length - 2 && clamped > (offsets[i + 1] ?? 0)) i++
+  const a = offsets[i] ?? 0
+  const b = offsets[i + 1] ?? a
+  const ca = centers[i] ?? 0
+  const cb = centers[i + 1] ?? ca
+  const t = b > a ? (clamped - a) / (b - a) : 0
+  return lerp(ca, cb, t)
+}
+
 export function StationProgressRail({
-  stations,
+  line,
   currentIndex,
   typedLength = 0,
-  color,
 }: StationProgressRailProps) {
+  const stations = line.stations
+  const color = line.color
   const scrollerRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+  const stopsRef = useRef<HTMLOListElement>(null)
+  const gapsRef = useRef<HTMLDivElement>(null)
   const fillRef = useRef<HTMLDivElement>(null)
   const headRef = useRef<HTMLDivElement>(null)
   const fromRef = useRef<HTMLLIElement>(null)
@@ -67,75 +113,119 @@ export function StationProgressRail({
   const prevIndexRef = useRef(safeIndex)
   const dense = count > 12
 
+  const offsets = useMemo(() => nodeKmOffsets(line), [line])
+  const startKm = useMemo(() => startToFirstKm(line), [line])
+  const lineTotalKm = useMemo(() => totalKm(line), [line])
+
+  /** km for each hop: Start→first, then each station→next. */
+  const gapKmList = useMemo(() => [startKm, ...line.segmentKm], [line.segmentKm, startKm])
+
   const targetLen = stations[safeIndex]?.length ?? 0
   const { committed, idle } = stationPoints(typedLength, targetLen)
   const stationComplete = targetLen > 0 && typedLength >= targetLen
-  const maxNodeIndex = Math.max(count, 0)
-  const committedRail = Math.min(safeIndex + committed, maxNodeIndex)
-  const idleRail = Math.min(safeIndex + idle, maxNodeIndex)
-  const startDone = committedRail > 0 || idleRail > 0
+  // Typing station i moves from node i (Start or previous station) → node i+1
+  const fromKm = offsets[safeIndex] ?? 0
+  const toKm = offsets[safeIndex + 1] ?? fromKm
+  const segmentKmSpan = Math.max(toKm - fromKm, 0.0001)
+  const committedKm = lerp(fromKm, toKm, committed)
+  const idleKm = lerp(fromKm, toKm, idle)
+  const startDone = committedKm > 0 || idleKm > 0
 
-  const committedRailRef = useRef(committedRail)
-  const idleRailRef = useRef(idleRail)
-  const displayRailRef = useRef(committedRail)
+  const committedKmRef = useRef(committedKm)
+  const idleKmRef = useRef(idleKm)
+  const displayKmRef = useRef(committedKm)
   const stationCompleteRef = useRef(stationComplete)
-  const nodeCountRef = useRef(nodeCount)
+  const offsetsRef = useRef(offsets)
+  const segmentKmSpanRef = useRef(segmentKmSpan)
   const targetLenRef = useRef(targetLen)
 
-  committedRailRef.current = committedRail
-  idleRailRef.current = idleRail
+  committedKmRef.current = committedKm
+  idleKmRef.current = idleKm
   stationCompleteRef.current = stationComplete
-  nodeCountRef.current = nodeCount
+  offsetsRef.current = offsets
+  segmentKmSpanRef.current = segmentKmSpan
   targetLenRef.current = targetLen
+
+  const kmPercent = (km: number) => {
+    const total = Math.max(lineTotalKm, 0.0001)
+    return `${(km / total) * 100}%`
+  }
 
   useLayoutEffect(() => {
     const track = trackRef.current
+    const stops = stopsRef.current
+    const gaps = gapsRef.current
     const fill = fillRef.current
     const head = headRef.current
-    if (!track || !fill || !head) return
+    if (!track || !stops || !fill || !head) return
 
     const media = window.matchMedia('(prefers-reduced-motion: reduce)')
     let raf = 0
     let last = performance.now()
 
-    const apply = (rail: number) => {
-      displayRailRef.current = rail
-      const nodes = Math.max(nodeCountRef.current, 1)
-      const slot = track.offsetWidth / nodes
-      fill.style.width = `${slot * rail}px`
-      head.style.transform = `translate3d(${slot * (rail + 0.5)}px, 0, 0) translateX(-50%)`
+    const measureCenters = () => {
+      const trackRect = track.getBoundingClientRect()
+      const items = stops.querySelectorAll<HTMLLIElement>('.station-progress__stop')
+      const centers: number[] = []
+      items.forEach((el) => {
+        const r = el.getBoundingClientRect()
+        centers.push(r.left + r.width / 2 - trackRect.left)
+      })
+      return centers
     }
 
-    apply(displayRailRef.current)
+    const placeGapLabels = (centers: number[]) => {
+      if (!gaps) return
+      const chips = gaps.querySelectorAll<HTMLElement>('.station-progress__gap-km')
+      chips.forEach((chip) => {
+        const i = Number(chip.dataset.seg)
+        if (!Number.isFinite(i)) return
+        const a = centers[i]
+        const b = centers[i + 1]
+        if (a == null || b == null) return
+        chip.style.left = `${(a + b) / 2}px`
+      })
+    }
+
+    const apply = (km: number) => {
+      displayKmRef.current = km
+      const centers = measureCenters()
+      placeGapLabels(centers)
+      const x = kmToX(km, offsetsRef.current, centers)
+      const origin = centers[0] ?? 0
+      fill.style.left = `${origin}px`
+      fill.style.width = `${Math.max(0, x - origin)}px`
+      head.style.transform = `translate3d(${x}px, 0, 0) translateX(-50%)`
+    }
+
+    apply(displayKmRef.current)
 
     const tick = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05)
       last = now
 
-      const committedTarget = committedRailRef.current
-      const idleTarget = idleRailRef.current
+      const committedTarget = committedKmRef.current
+      const idleTarget = idleKmRef.current
       const complete = stationCompleteRef.current
-      let current = displayRailRef.current
+      let current = displayKmRef.current
       const eps = 0.00005
 
       let target = idleTarget
       let baseMs = CREEP_GLIDE_MS
 
       if (complete) {
-        // Name finished — ignore creep, dash to the station node.
         target = committedTarget
         baseMs = FINISH_GLIDE_MS
       } else if (current < committedTarget - eps) {
-        // Behind typed progress: stay late, but accelerate as debt grows.
         target = committedTarget
         const len = Math.max(targetLenRef.current, 1)
-        const charsBehind = (committedTarget - current) * len
+        const span = Math.max(segmentKmSpanRef.current, 0.0001)
+        const charsBehind = ((committedTarget - current) / span) * len
         baseMs = Math.max(
           COMMIT_MIN_MS,
           COMMIT_GLIDE_MS - charsBehind * COMMIT_DEBT_MS,
         )
       } else if (current > idleTarget + eps) {
-        // Backspace / overshoot — pull back to the idle hold point.
         target = idleTarget
         baseMs = COMMIT_MIN_MS
       }
@@ -144,7 +234,6 @@ export function StationProgressRail({
       if (Math.abs(error) > eps) {
         const isCreep = baseMs === CREEP_GLIDE_MS
         const isFinish = baseMs === FINISH_GLIDE_MS
-        // Keep creep slow under reduced-motion; finish stays snappy.
         const ms =
           media.matches && isCreep
             ? baseMs
@@ -164,14 +253,14 @@ export function StationProgressRail({
 
     raf = requestAnimationFrame(tick)
 
-    const onResize = () => apply(displayRailRef.current)
+    const onResize = () => apply(displayKmRef.current)
     window.addEventListener('resize', onResize)
 
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', onResize)
     }
-  }, [nodeCount])
+  }, [line.id, nodeCount])
 
   useEffect(() => {
     const scroller = scrollerRef.current
@@ -181,8 +270,11 @@ export function StationProgressRail({
     const advanced = prevIndexRef.current !== safeIndex
     prevIndexRef.current = safeIndex
     const slotBias = idle * el.offsetWidth * 0.5
-    const target =
-      el.offsetLeft - scroller.clientWidth / 2 + el.offsetWidth / 2 + slotBias
+    const scrollerRect = scroller.getBoundingClientRect()
+    const elRect = el.getBoundingClientRect()
+    const elCenter =
+      elRect.left - scrollerRect.left + scroller.scrollLeft + elRect.width / 2
+    const target = elCenter - scroller.clientWidth / 2 + slotBias
     scroller.scrollTo({
       left: Math.max(0, target),
       behavior: reduceMotion || !advanced ? 'auto' : 'smooth',
@@ -190,6 +282,9 @@ export function StationProgressRail({
   }, [safeIndex, idle])
 
   if (count === 0) return null
+
+  // ~1.15rem per km, floored so short lines still scroll-friendly
+  const minTrackPx = Math.max(nodeCount * 3.2, lineTotalKm * 1.15)
 
   return (
     <nav
@@ -211,7 +306,7 @@ export function StationProgressRail({
           style={
             {
               ['--station-count' as string]: nodeCount,
-              minWidth: `max(100%, calc(${nodeCount} * var(--station-slot)))`,
+              minWidth: `max(100%, ${minTrackPx}rem)`,
             } as CSSProperties
           }
         >
@@ -221,7 +316,27 @@ export function StationProgressRail({
             <PixelTrainHead color={color} className="station-progress__train" />
           </div>
 
-          <ol className="station-progress__stops">
+          <div className="station-progress__gaps" ref={gapsRef} aria-hidden="true">
+            {gapKmList.map((gapKm, index) => {
+              if (!shouldShowGapKm(index, safeIndex, dense, gapKm)) return null
+              return (
+                <span
+                  key={`gap-${index}`}
+                  className={[
+                    'station-progress__gap-km',
+                    index === safeIndex ? 'is-current' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  data-seg={index}
+                >
+                  {formatGapKm(gapKm)}
+                </span>
+              )
+            })}
+          </div>
+
+          <ol className="station-progress__stops" ref={stopsRef}>
             <li
               ref={safeIndex === 0 ? fromRef : undefined}
               className={[
@@ -232,6 +347,7 @@ export function StationProgressRail({
               ]
                 .filter(Boolean)
                 .join(' ')}
+              style={{ left: kmPercent(0) }}
               aria-label="Start"
             >
               <span className="station-progress__dot" aria-hidden="true" />
@@ -247,6 +363,7 @@ export function StationProgressRail({
               const showLabel = shouldShowLabel(index, safeIndex, count)
               const label = dense && !current ? shortStationName(name, 9) : name
               const isFromStop = index === safeIndex - 1
+              const nodeKm = offsets[index + 1] ?? 0
 
               return (
                 <li
@@ -261,6 +378,7 @@ export function StationProgressRail({
                   ]
                     .filter(Boolean)
                     .join(' ')}
+                  style={{ left: kmPercent(nodeKm) }}
                   aria-current={current ? 'step' : undefined}
                   aria-label={`${name}${current ? ', current' : done ? ', cleared' : ', upcoming'}`}
                 >

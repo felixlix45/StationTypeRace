@@ -12,6 +12,7 @@ import {
   type ShareCardVariant,
 } from './components/ShareCard'
 import { StationProgressRail } from './components/StationProgressRail'
+import { distanceProgress } from './lib/stationDistances'
 import {
   LINE_CATEGORIES,
   linesByCategory,
@@ -689,7 +690,11 @@ export default function App() {
       : 100
   const progress =
     race && race.line.stations.length > 0
-      ? Math.min(race.stationIndex / race.line.stations.length, 1)
+      ? distanceProgress(
+          race.line,
+          race.stationIndex,
+          currentStation.length > 0 ? race.input.length / currentStation.length : 0,
+        )
       : 0
 
   const isSliding = slide !== null
@@ -1046,10 +1051,9 @@ export default function App() {
           </section>
 
           <StationProgressRail
-            stations={race.line.stations}
+            line={race.line}
             currentIndex={race.stationIndex}
             typedLength={race.input.length}
-            color={race.line.color}
           />
         </>
       )}
