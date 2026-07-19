@@ -5129,6 +5129,22 @@ input {
     0 0 18px color-mix(in srgb, var(--bad) 28%, transparent);
 }
 
+.results-chart-tip.is-partial {
+  border-color: color-mix(in srgb, #f0c86e 40%, transparent);
+}
+
+.results-chart-tip.is-partial .results-chart-tip-edge {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #f0c86e 60%, white),
+    #e0a83a 40%,
+    color-mix(in srgb, #e0a83a 70%, #000)
+  );
+  box-shadow:
+    0 0 10px color-mix(in srgb, #e0a83a 45%, transparent),
+    0 0 18px color-mix(in srgb, #e0a83a 22%, transparent);
+}
+
 .results-chart-tip.is-pinned {
   border-color: color-mix(in srgb, #7ef9ff 45%, var(--line));
   box-shadow:
@@ -5293,6 +5309,11 @@ input {
 .results-chart-tip-stats dd.is-ok {
   color: var(--ok);
   text-shadow: 0 0 8px color-mix(in srgb, var(--ok) 35%, transparent);
+}
+
+.results-chart-tip-stats dd.is-partial {
+  color: #f0c86e;
+  text-shadow: 0 0 8px color-mix(in srgb, #e0a83a 35%, transparent);
 }
 
 .results-chart-tip-stats dd.is-bad {

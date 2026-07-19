@@ -23,23 +23,66 @@ export function formatAccuracy(accuracy: number): string {
   return Number.isFinite(accuracy) ? `${accuracy}%` : '100%'
 }
 
-/** Case-insensitive full-string match (used for WPM banking, not advance). */
+/**
+ * Monkeytype-style credit inside a station name: each space-separated word
+ * is all-or-nothing. A wrong letter zeros that word only. Matching spaces
+ * between words still count. Incomplete trailing word (live typing) counts
+ * its matching prefix, or 0 if any typed char in that word is wrong.
+ */
+export function creditedStationChars(target: string, typed: string): number {
+  const t = target.toLowerCase()
+  const s = typed.toLowerCase()
+  const limit = Math.min(t.length, s.length)
+  let credited = 0
+  let i = 0
+
+  while (i < limit) {
+    if (t[i] === ' ') {
+      if (s[i] === ' ') credited += 1
+      i += 1
+      continue
+    }
+
+    let end = i
+    while (end < t.length && t[end] !== ' ') end += 1
+    const wordLen = end - i
+    const typedLen = Math.min(wordLen, limit - i)
+
+    if (typedLen < wordLen) {
+      let match = true
+      for (let j = 0; j < typedLen; j += 1) {
+        if (s[i + j] !== t[i + j]) {
+          match = false
+          break
+        }
+      }
+      if (match) credited += typedLen
+      break
+    }
+
+    let wordOk = true
+    for (let j = 0; j < wordLen; j += 1) {
+      if (s[i + j] !== t[i + j]) {
+        wordOk = false
+        break
+      }
+    }
+    if (wordOk) credited += wordLen
+    i = end
+  }
+
+  return credited
+}
+
+/** Full station match (every word + space correct, full length). */
 export function isStationCorrect(target: string, typed: string): boolean {
   return (
     typed.length === target.length &&
-    typed.toLowerCase() === target.toLowerCase()
+    creditedStationChars(target, typed) === target.length
   )
 }
 
-/**
- * Live WPM credit for the current station: full typed length only when
- * every character so far matches the target prefix; otherwise 0 until fixed.
- */
+/** Live WPM credit for the current station (per-word, not whole-station). */
 export function correctPrefixChars(target: string, typed: string): number {
-  const t = target.toLowerCase()
-  const s = typed.toLowerCase()
-  for (let i = 0; i < s.length; i += 1) {
-    if (s[i] !== t[i]) return 0
-  }
-  return s.length
+  return creditedStationChars(target, typed)
 }
