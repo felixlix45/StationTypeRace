@@ -12,6 +12,7 @@ import {
   type ShareCardVariant,
 } from './components/ShareCard'
 import { StationProgressRail } from './components/StationProgressRail'
+import { distanceProgress } from './lib/stationDistances'
 import {
   LINE_CATEGORIES,
   linesByCategory,
@@ -353,14 +354,13 @@ export default function App() {
     endedAt: number,
   ): RaceState {
     const target = state.line.stations[state.stationIndex]!
-    const perfect = isStationCorrect(target, state.input)
     const stationStartedAt =
       state.stationStartedAt ?? state.startedAt ?? endedAt
     const sample = buildStationSample({
       index: state.stationIndex,
       name: target,
       target,
-      perfect,
+      typed: state.input,
       startedAt: stationStartedAt,
       endedAt,
       correctKeystrokes: state.correctKeystrokes,
@@ -371,7 +371,7 @@ export default function App() {
     return {
       ...state,
       input: '',
-      correctChars: state.correctChars + (perfect ? target.length : 0),
+      correctChars: state.correctChars + sample.creditedChars,
       stationIndex: state.stationIndex + 1,
       stationSamples: [...state.stationSamples, sample],
       stationStartedAt: null,
@@ -387,7 +387,7 @@ export default function App() {
     if (!current || phaseRef.current !== 'racing') return
 
     const target = current.line.stations[current.stationIndex]!
-    // Advance when length is filled (wrong chars OK); WPM only banks perfect stations
+    // Advance when length is filled (wrong chars OK); WPM banks per correct word
     if (current.input.length !== target.length) return
 
     const endedAt = Date.now()
@@ -689,7 +689,11 @@ export default function App() {
       : 100
   const progress =
     race && race.line.stations.length > 0
-      ? Math.min(race.stationIndex / race.line.stations.length, 1)
+      ? distanceProgress(
+          race.line,
+          race.stationIndex,
+          currentStation.length > 0 ? race.input.length / currentStation.length : 0,
+        )
       : 0
 
   const isSliding = slide !== null
@@ -1046,10 +1050,9 @@ export default function App() {
           </section>
 
           <StationProgressRail
-            stations={race.line.stations}
+            line={race.line}
             currentIndex={race.stationIndex}
             typedLength={race.input.length}
-            color={race.line.color}
           />
         </>
       )}

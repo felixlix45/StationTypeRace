@@ -5,6 +5,12 @@ export type StationLine = {
   color: string
   route: string
   stations: string[]
+  /**
+   * Approximate km between consecutive stations.
+   * Length = stations.length - 1; segmentKm[i] = stations[i] → stations[i + 1].
+   * See docs/research/2026-07-11-station-stops-catalog.md § Inter-station distances.
+   */
+  segmentKm: number[]
 }
 
 /** Operational stop names only — from docs/research/2026-07-11-station-stops-catalog.md */
@@ -44,6 +50,12 @@ export const STATION_LINES: StationLine[] = [
       'Cibinong',
       'Nambo',
     ],
+    segmentKm: [
+      1.4, 1.0, 1.1, 0.7, 2.2, 1.7, 1.6, 2.6, 1.3, 1.4, 1.5, 1.7, 3.0, 2.4, 1.0,
+      2.2, 1.1, 2.5, 1.7, 5.0, 5.2, 4.3, 7.5,
+      // List discontinuity: Bogor terminus → Nambo branch (real branch is from Citayam)
+      20.3, 3.2, 6.3,
+    ],
   },
   {
     id: 'cikarang',
@@ -81,6 +93,15 @@ export const STATION_LINES: StationLine[] = [
       'Pondok Jati',
       'Jakarta Kota',
     ],
+    segmentKm: [
+      3.4, 3.1, 1.3, 1.3, 3.1, 2.5, 2.8, 4.8, 4.8, 4.8, 4.8,
+      // List discontinuity: Cikarang → Kampung Bandan via Jatinegara + Pasar Senen
+      47.4, 4.1, 1.2, 3.6, 2.0, 1.2, 0.8, 3.2, 1.3,
+      // List discontinuity: Matraman → Rajawali (Pasar Senen corridor)
+      8.3, 1.9, 1.4, 1.6, 1.0, 1.8,
+      // List discontinuity: Pondok Jati → Jakarta Kota via Kampung Bandan
+      10.5,
+    ],
   },
   {
     id: 'rangkasbitung',
@@ -110,6 +131,10 @@ export const STATION_LINES: StationLine[] = [
       'Citeras',
       'Rangkasbitung',
     ],
+    segmentKm: [
+      3.2, 3.7, 6.2, 2.2, 2.0, 4.6, 2.4, 1.8, 2.5, 2.5, 3.5, 7.0, 2.7, 3.9, 3.0,
+      2.7, 1.9, 8.5, 8.7,
+    ],
   },
   {
     id: 'tangerang',
@@ -130,6 +155,7 @@ export const STATION_LINES: StationLine[] = [
       'Tanah Tinggi',
       'Tangerang',
     ],
+    segmentKm: [1.7, 2.0, 1.5, 2.4, 1.2, 2.5, 2.5, 1.8, 2.0, 1.6],
   },
   {
     id: 'tanjung-priok',
@@ -144,6 +170,7 @@ export const STATION_LINES: StationLine[] = [
       'Jakarta International Stadium',
       'Tanjung Priok',
     ],
+    segmentKm: [1.4, 2.2, 3.5, 8.3],
   },
   {
     id: 'mrt-ns',
@@ -166,6 +193,7 @@ export const STATION_LINES: StationLine[] = [
       'Dukuh Atas',
       'Bundaran HI',
     ],
+    segmentKm: [2.2, 1.8, 1.3, 1.2, 1.3, 0.6, 2.0, 0.9, 1.4, 1.1, 1.0, 0.9],
   },
   {
     id: 'lrt-jakarta',
@@ -181,6 +209,7 @@ export const STATION_LINES: StationLine[] = [
       'Equestrian',
       'Velodrome',
     ],
+    segmentKm: [1.2, 1.1, 1.2, 1.1, 1.2],
   },
   {
     id: 'lrt-cibubur',
@@ -202,6 +231,7 @@ export const STATION_LINES: StationLine[] = [
       'Ciracas',
       'Harjamukti',
     ],
+    segmentKm: [1.2, 1.3, 1.4, 1.5, 1.5, 1.5, 1.6, 4.0, 3.5, 3.5, 4.0],
   },
   {
     id: 'lrt-bekasi',
@@ -225,6 +255,7 @@ export const STATION_LINES: StationLine[] = [
       'Bekasi Barat',
       'Jati Mulya',
     ],
+    segmentKm: [1.2, 1.3, 1.4, 1.5, 1.5, 1.5, 1.6, 4.0, 3.5, 2.8, 2.2, 3.0, 3.0],
   },
 ]
 

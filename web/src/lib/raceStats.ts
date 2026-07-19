@@ -1,4 +1,4 @@
-import { calcWpm } from './wpm'
+import { calcWpm, creditedStationChars, isStationCorrect } from './wpm'
 
 /** Per-station timing/error sample recorded on advance (or finish). */
 export type StationSample = {
@@ -9,7 +9,7 @@ export type StationSample = {
   durationMs: number
   targetLen: number
   perfect: boolean
-  /** Chars banked into race WPM (target length if perfect, else 0). */
+  /** Chars banked into race WPM (per-word credit within the station name). */
   creditedChars: number
   correctDelta: number
   incorrectDelta: number
@@ -26,7 +26,7 @@ export function buildStationSample(args: {
   index: number
   name: string
   target: string
-  perfect: boolean
+  typed: string
   startedAt: number
   endedAt: number
   correctKeystrokes: number
@@ -34,7 +34,8 @@ export function buildStationSample(args: {
   baseline: KeystrokeBaseline
 }): StationSample {
   const durationMs = Math.max(args.endedAt - args.startedAt, 1)
-  const creditedChars = args.perfect ? args.target.length : 0
+  const creditedChars = creditedStationChars(args.target, args.typed)
+  const perfect = isStationCorrect(args.target, args.typed)
   return {
     index: args.index,
     name: args.name,
@@ -42,7 +43,7 @@ export function buildStationSample(args: {
     endedAt: args.endedAt,
     durationMs,
     targetLen: args.target.length,
-    perfect: args.perfect,
+    perfect,
     creditedChars,
     correctDelta: Math.max(0, args.correctKeystrokes - args.baseline.correct),
     incorrectDelta: Math.max(
