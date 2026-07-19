@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
@@ -22,7 +23,6 @@ function gitShortSha(): string {
 const appVersion = pkg.version
 const gitCommit = gitShortSha()
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   define: {
@@ -30,7 +30,10 @@ export default defineConfig({
     __GIT_COMMIT__: JSON.stringify(gitCommit),
   },
   server: {
-    // Allow Cloudflare quick tunnels / LAN previews (phone testing without deploy).
     allowedHosts: true,
+  },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
   },
 })
