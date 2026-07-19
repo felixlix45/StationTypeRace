@@ -108,10 +108,11 @@ input {
 
 .system-tag {
   margin: 0 0 0.75rem;
-  color: var(--signal);
+  color: color-mix(in srgb, var(--signal) 88%, white);
   font-size: 0.75rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+  text-shadow: 0 1px 10px color-mix(in srgb, var(--ink) 70%, transparent);
 }
 
 .brand {
@@ -123,16 +124,60 @@ input {
   letter-spacing: -0.04em;
   color: var(--paper);
   max-width: 100%;
+  text-shadow:
+    0 1px 2px color-mix(in srgb, var(--ink) 85%, transparent),
+    0 2px 18px color-mix(in srgb, var(--ink) 55%, transparent);
 }
 
 .atmosphere,
-.drone-backdrop {
+.drone-backdrop,
+.rail-map-backdrop {
   /* fixed: stay viewport-pinned and keep Ken Burns bleed out of .app scrollWidth */
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+}
+
+.rail-map-backdrop {
+  /* Matches WATER_FILL in RailMapBackdrop — letterbox bands read as sea */
+  background: #6f8fa6;
+}
+
+.rail-map-backdrop__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.rail-map-backdrop__svg--base {
+  position: absolute;
+  inset: 0;
+}
+
+.rail-map-backdrop__svg--overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.rail-map-backdrop__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* Darken map land enough for WCAG AA text (≥4.5:1) on hero/race chrome */
+  background:
+    radial-gradient(ellipse at 50% 35%, rgb(10 16 28 / 0.45), rgb(10 16 28 / 0.80) 72%),
+    linear-gradient(180deg, rgb(10 16 28 / 0.64), rgb(10 16 28 / 0.86));
+  pointer-events: none;
+}
+
+/* Idle: lighter scrim so white land + cool sea stay readable while chrome still passes AA */
+.rail-map-backdrop[data-phase='idle'] .rail-map-backdrop__scrim {
+  background:
+    radial-gradient(ellipse at 50% 40%, rgb(10 16 28 / 0.22), rgb(10 16 28 / 0.52) 75%),
+    linear-gradient(180deg, rgb(10 16 28 / 0.38), rgb(10 16 28 / 0.62));
 }
 
 .drone-backdrop {
@@ -655,7 +700,9 @@ input {
   }
 }
 
+/* Neutralized — fights the rail map backdrop; StationProgressRail stays */
 .track-glow {
+  display: none;
   position: fixed;
   left: 0;
   right: 0;
@@ -669,10 +716,10 @@ input {
     color-mix(in srgb, var(--line) 70%, white) 80%,
     transparent
   );
-  opacity: 0.35;
+  opacity: 0;
   z-index: 0;
   pointer-events: none;
-  animation: pulse-track 3.2s ease-in-out infinite;
+  animation: none;
 }
 
 @keyframes pulse-track {
@@ -737,9 +784,11 @@ input {
 .lede {
   margin: 1.25rem 0 0;
   max-width: 28rem;
-  color: var(--fog);
+  /* Lift fog toward paper so body copy clears 4.5:1 on map+scrim */
+  color: color-mix(in srgb, var(--fog) 55%, var(--paper));
   font-size: clamp(0.95rem, 2.4vw, 1.1rem);
   line-height: 1.55;
+  text-shadow: 0 1px 8px color-mix(in srgb, var(--ink) 75%, transparent);
 }
 
 .cta-row {
@@ -758,10 +807,11 @@ input {
 
 .line-picker-label {
   margin: 0 0 1.25rem;
-  color: var(--fog);
+  color: color-mix(in srgb, var(--fog) 55%, var(--paper));
   font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  text-shadow: 0 1px 8px color-mix(in srgb, var(--ink) 75%, transparent);
 }
 
 .line-picker-columns {
@@ -1021,7 +1071,7 @@ input {
 
 .stat-label {
   display: block;
-  color: var(--fog);
+  color: color-mix(in srgb, var(--fog) 50%, var(--paper));
   font-size: 0.7rem;
   letter-spacing: 0.16em;
   text-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 88%, transparent);
@@ -1033,7 +1083,7 @@ input {
   font-family: var(--font-display);
   font-size: clamp(2rem, 6vw, 2.75rem);
   font-weight: 800;
-  color: var(--signal);
+  color: color-mix(in srgb, var(--signal) 90%, white);
   line-height: 1;
   font-variant-numeric: tabular-nums;
   transition: color 0.2s ease;
@@ -1045,7 +1095,7 @@ input {
 .stat-sub {
   display: block;
   margin-top: 0.35rem;
-  color: var(--fog);
+  color: color-mix(in srgb, var(--fog) 50%, var(--paper));
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
@@ -1575,7 +1625,7 @@ input {
 }
 
 .prompt-word .pending {
-  color: color-mix(in srgb, var(--paper) 78%, var(--fog));
+  color: color-mix(in srgb, var(--paper) 90%, var(--fog));
 }
 
 @keyframes slide-out-up {

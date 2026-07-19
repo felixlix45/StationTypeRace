@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent, KeyboardEvent } from 'react'
-import {
-  DroneBackdrop,
-  pickRandomLandmark,
-  type LandmarkId,
-} from './components/DroneBackdrop'
+import { RailMapBackdrop } from './components/RailMapBackdrop'
 import { ResultsDiagnostics } from './components/ResultsDiagnostics'
 import {
   ShareCard,
@@ -138,7 +134,8 @@ export default function App() {
   /** Pre-rendered PNG for the visible preview — same bytes Save/Share use. */
   const [sharePngDataUrl, setSharePngDataUrl] = useState<string | null>(null)
   const [sharePngPreparing, setSharePngPreparing] = useState(false)
-  const [landmarkId, setLandmarkId] = useState<LandmarkId | null>(null)
+  /** Idle picker hover/focus — highlights that line on the zoomed-out map. */
+  const [hoverLineId, setHoverLineId] = useState<string | null>(null)
   /** Blocks mobile Contact/Autofill heuristics until the field is activated. */
   const [autofillGuard, setAutofillGuard] = useState(true)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
@@ -300,21 +297,21 @@ export default function App() {
     setElapsedMs(0)
     setFinishedSamples([])
     setShareNote(null)
-    setLandmarkId(null)
     commitPhase('idle')
   }
 
   function startRace(line?: StationLine) {
     clearSlideTimer()
     setSlide(null)
-    commitRace(createRace(line))
+    const next = createRace(line)
+    commitRace(next)
+    setHoverLineId(null)
     setFinalWpm(0)
     setFinalRawWpm(0)
     setFinalAccuracy(100)
     setElapsedMs(0)
     setFinishedSamples([])
     setShareNote(null)
-    setLandmarkId(pickRandomLandmark(landmarkId).id)
     commitPhase('racing')
     setNow(Date.now())
   }
@@ -696,6 +693,14 @@ export default function App() {
         )
       : 0
 
+  const mapLineId =
+    phase === 'idle' ? hoverLineId : (race?.line.id ?? null)
+  const mapStationIndex = race?.stationIndex ?? 0
+  const mapTypedFraction =
+    phase === 'racing' && race && currentStation.length > 0
+      ? race.input.length / currentStation.length
+      : 0
+
   const isSliding = slide !== null
 
   const shareResult: ShareResult | null =
@@ -767,10 +772,11 @@ export default function App() {
       data-phase={phase}
       data-kb={phase === 'racing' && keyboardOpen ? 'open' : 'closed'}
     >
-      <DroneBackdrop
-        mode={phase === 'idle' ? 'orbit' : 'zoom'}
-        landmarkId={landmarkId}
-        showCredit
+      <RailMapBackdrop
+        phase={phase}
+        lineId={mapLineId}
+        stationIndex={mapStationIndex}
+        typedFraction={mapTypedFraction}
       />
       <div className="track-glow" aria-hidden="true" />
 
@@ -791,7 +797,10 @@ export default function App() {
             </button>
           </div>
 
-          <div className="line-picker">
+          <div
+            className="line-picker"
+            onMouseLeave={() => setHoverLineId(null)}
+          >
             <p className="line-picker-label">Or choose a line</p>
             <div className="line-picker-columns">
               {LINE_CATEGORIES.map((category) => {
@@ -807,6 +816,20 @@ export default function App() {
                             type="button"
                             className="line-pick"
                             style={lineStyle(line.color)}
+                            onMouseEnter={() => setHoverLineId(line.id)}
+                            onFocus={() => setHoverLineId(line.id)}
+                            onBlur={(e) => {
+                              const next = e.relatedTarget as Node | null
+                              if (
+                                next &&
+                                e.currentTarget
+                                  .closest('.line-picker')
+                                  ?.contains(next)
+                              ) {
+                                return
+                              }
+                              setHoverLineId(null)
+                            }}
                             onClick={() => startRace(line)}
                           >
                             <span className="line-pick-dot" aria-hidden="true" />
