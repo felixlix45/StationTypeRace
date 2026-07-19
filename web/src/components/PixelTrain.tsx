@@ -100,7 +100,6 @@ export function PixelTrainHead({
   color?: string
   className?: string
 }) {
-  const cabin = '#0a1620'
   const paint = color.startsWith('var(') ? '#ffb020' : color
 
   return (
@@ -116,21 +115,78 @@ export function PixelTrainHead({
         filter: `drop-shadow(0 0 3px ${paint}) drop-shadow(0 0 6px ${paint})`,
       }}
     >
-      <g>
-        <rect x="14" y="12" width="34" height="16" fill={paint} />
-        <rect x="18" y="8" width="24" height="6" fill={paint} />
-        <rect x="22" y="4" width="14" height="5" fill={paint} />
-        <rect x="20" y="14" width="10" height="8" fill={cabin} />
-        <rect x="22" y="15" width="6" height="5" fill={paint} opacity="0.45" />
-        <rect x="6" y="18" width="10" height="8" fill={paint} />
-        <rect x="2" y="20" width="6" height="3" fill={paint} opacity="0.55" />
-        <rect x="4" y="14" width="3" height="3" fill="#fff7c2" />
-        <rect x="20" y="28" width="6" height="4" fill="#111" />
-        <rect x="22" y="29" width="2" height="2" fill={paint} opacity="0.7" />
-        <rect x="34" y="28" width="6" height="4" fill="#111" />
-        <rect x="36" y="29" width="2" height="2" fill={paint} opacity="0.7" />
-        <rect x="28" y="1" width="3" height="3" fill={paint} opacity="0.55" />
-      </g>
+      <PixelTrainHeadGlyph color={paint} />
     </svg>
+  )
+}
+
+/**
+ * Pure SVG glyph (viewBox 0 0 56 36, nose faces −X).
+ * Use inside a map `<g transform=…>` so rotation works without foreignObject.
+ *
+ * Optional `bodyFill`: land/white body + `color` outline for contrast on a
+ * same-color track (map marker). Omit for solid line-color body (progress rail).
+ */
+export function PixelTrainHeadGlyph({
+  color,
+  bodyFill,
+}: {
+  color: string
+  bodyFill?: string
+}) {
+  const cabin = '#0a1620'
+  const paint = color.startsWith('var(') ? '#ffb020' : color
+  const body = bodyFill ?? paint
+  const outline = bodyFill ? paint : undefined
+  const outlineW = bodyFill ? 2.5 : undefined
+
+  return (
+    <g shapeRendering="crispEdges" paintOrder={bodyFill ? 'stroke fill' : undefined}>
+      <rect
+        x="14"
+        y="12"
+        width="34"
+        height="16"
+        fill={body}
+        stroke={outline}
+        strokeWidth={outlineW}
+      />
+      <rect
+        x="18"
+        y="8"
+        width="24"
+        height="6"
+        fill={body}
+        stroke={outline}
+        strokeWidth={outlineW}
+      />
+      <rect
+        x="22"
+        y="4"
+        width="14"
+        height="5"
+        fill={body}
+        stroke={outline}
+        strokeWidth={outlineW}
+      />
+      <rect x="20" y="14" width="10" height="8" fill={cabin} />
+      <rect x="22" y="15" width="6" height="5" fill={paint} opacity="0.45" />
+      <rect
+        x="6"
+        y="18"
+        width="10"
+        height="8"
+        fill={body}
+        stroke={outline}
+        strokeWidth={outlineW}
+      />
+      <rect x="2" y="20" width="6" height="3" fill={paint} opacity="0.55" />
+      <rect x="4" y="14" width="3" height="3" fill="#fff7c2" />
+      <rect x="20" y="28" width="6" height="4" fill="#111" />
+      <rect x="22" y="29" width="2" height="2" fill={paint} opacity="0.7" />
+      <rect x="34" y="28" width="6" height="4" fill="#111" />
+      <rect x="36" y="29" width="2" height="2" fill={paint} opacity="0.7" />
+      <rect x="28" y="1" width="3" height="3" fill={paint} opacity="0.55" />
+    </g>
   )
 }

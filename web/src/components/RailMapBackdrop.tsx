@@ -5,13 +5,33 @@ import { STATION_LINES } from '../data/stations'
 import {
   clampViewBox,
   frameAroundPoint,
-  frameForLine,
+  frameForFinishedLine,
   viewBoxToString,
   type ViewBox,
 } from '../lib/railMapCamera'
 import { mapStrokeColor } from '../lib/railMapContrast'
-import { markerPointFromStations } from '../lib/railMapProgress'
+import {
+  markerPointFromStations,
+  markerTravelHeadingDeg,
+  trainMarkerTransform,
+} from '../lib/railMapProgress'
 import { getLinePath, resolveStationPoints } from '../lib/railMapNetwork'
+import { PixelTrainHeadGlyph } from './PixelTrain'
+
+/** Medium race follow-zoom (plan: ~40–45% of min world dim). */
+const RACE_ZOOM_FRAC = 0.42
+const SELECTED_STROKE_IDLE = 5
+const SELECTED_STROKE_RACE = 0.8
+const STATION_DOT_R_RACE = 0.9
+const STATION_DOT_STROKE_RACE = 0.5
+const STATION_DOT_R_FINISH = 4
+/**
+ * Map marker size in world units (glyph viewBox is 56×36, nose faces −X).
+ * Keep near station-dot scale so the thin race stroke stays readable.
+ */
+const TRAIN_HEAD_SCALE = 0.14
+const TRAIN_GLYPH_CX = 28
+const TRAIN_GLYPH_CY = 18
 
 export type RailMapBackdropProps = {
   phase: 'idle' | 'racing' | 'finished'
@@ -162,10 +182,27 @@ export function RailMapBackdrop({
     return markerPointFromStations(stationPoints, stationIndex, typedFraction)
   }, [stationPoints, phase, stationIndex, typedFraction])
 
+  const markerTransform = useMemo(() => {
+    if (stationPoints.length < 2 || phase === 'idle') {
+      return { rotateDeg: 0, scaleX: 1 }
+    }
+    const idx =
+      phase === 'finished' ? stationPoints.length - 1 : stationIndex
+    const frac = phase === 'finished' ? 1 : typedFraction
+    return trainMarkerTransform(
+      markerTravelHeadingDeg(stationPoints, idx, frac),
+    )
+  }, [stationPoints, phase, stationIndex, typedFraction])
+
+  const selectedStrokeWidth =
+    phase === 'racing' ? SELECTED_STROKE_RACE : SELECTED_STROKE_IDLE
+  const stationDotR =
+    phase === 'racing' ? STATION_DOT_R_RACE : STATION_DOT_R_FINISH
+
   const targetViewBox = useMemo(() => {
     const world = { width: network.width, height: network.height }
     const minDim = Math.min(world.width, world.height)
-    const zoomSize = minDim * 0.22
+    const zoomSize = minDim * RACE_ZOOM_FRAC
 
     // Idle: full canvas so every corridor is end-to-end and sea surrounds land.
     if (phase === 'idle') {
@@ -175,30 +212,30 @@ export function RailMapBackdrop({
     if (phase === 'racing' && markerPoint) {
       return clampViewBox(
         frameAroundPoint(markerPoint, {
-          padding: 24,
-          minSize: 120,
+          padding: 28,
+          minSize: 160,
           zoomSize,
         }),
         world,
       )
     }
 
-    // Finished (or racing without marker): frame the active line.
+    // Finished (or racing without marker): full line + stations, zoomed out.
     if (selectedPath) {
       return clampViewBox(
-        frameForLine(selectedPath.points, { padding: 48, minSize: 120 }),
+        frameForFinishedLine(selectedPath.points, stationPoints),
         world,
       )
     }
 
     return { x: 0, y: 0, w: world.width, h: world.height }
-  }, [selectedPath, phase, markerPoint])
+  }, [selectedPath, stationPoints, phase, markerPoint])
 
   const viewBox = useEasedViewBox(targetViewBox, snapCamera)
   const viewBoxStr = viewBoxToString(viewBox)
-  // `meet` keeps the entire network + sea in frame on idle; race/finish fill (`slice`).
+  // Idle + finished: `meet` so content is not cropped. Race fills with `slice`.
   const preserveAspectRatio =
-    phase === 'idle' ? 'xMidYMid meet' : 'xMidYMid slice'
+    phase === 'racing' ? 'xMidYMid slice' : 'xMidYMid meet'
 
   if (!network.lines?.length) {
     if (!warnedEmptyNetwork) {
@@ -279,7 +316,7 @@ export function RailMapBackdrop({
             points={pointsToPolyline(selectedPath.points)}
             fill="none"
             stroke={selectedStroke}
-            strokeWidth={5}
+            strokeWidth={selectedStrokeWidth}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -292,22 +329,22 @@ export function RailMapBackdrop({
               key={station.name}
               cx={station.x}
               cy={station.y}
-              r={4}
+              r={stationDotR}
               fill={LAND_FILL}
               stroke={selectedStroke}
-              strokeWidth={2}
+              strokeWidth={
+                phase === 'racing' ? STATION_DOT_STROKE_RACE : 2
+              }
             />
           ))}
 
-        {markerPoint && (
-          <circle
-            cx={markerPoint.x}
-            cy={markerPoint.y}
-            r={6.5}
-            fill={selectedStroke}
-            stroke={LAND_FILL}
-            strokeWidth={1.5}
-          />
+        {markerPoint && phase !== 'idle' && (
+          <g
+            className="rail-map-backdrop__train-mark"
+            transform={`translate(${markerPoint.x} ${markerPoint.y}) rotate(${markerTransform.rotateDeg}) scale(${TRAIN_HEAD_SCALE * markerTransform.scaleX} ${TRAIN_HEAD_SCALE}) translate(${-TRAIN_GLYPH_CX} ${-TRAIN_GLYPH_CY})`}
+          >
+            <PixelTrainHeadGlyph color={selectedStroke} bodyFill={LAND_FILL} />
+          </g>
         )}
       </svg>
     </div>

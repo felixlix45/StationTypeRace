@@ -50,3 +50,72 @@ export function stationPathProgress(
   if (i === 0) return 0
   return clamp01((i - 1 + f) / last)
 }
+
+/** Degrees from +X toward travel (SVG Y-down; matches `rotate()`). */
+export function segmentHeadingDeg(from: RailMapPoint, to: RailMapPoint): number {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  if (dx === 0 && dy === 0) return 0
+  return (Math.atan2(dy, dx) * 180) / Math.PI
+}
+
+/**
+ * Travel heading (from → to) for the marker on the station polyline.
+ * While typing station 0, faces toward station 1. Finished callers should
+ * pass the last station index.
+ */
+export function markerTravelHeadingDeg(
+  stations: RailMapPoint[],
+  stationIndex: number,
+  _typedFraction: number,
+): number {
+  if (stations.length < 2) return 0
+
+  const last = stations.length - 1
+  const i = Math.min(Math.max(stationIndex, 0), last)
+
+  let from: RailMapPoint
+  let to: RailMapPoint
+  if (i === 0) {
+    from = stations[0]!
+    to = stations[1]!
+  } else {
+    from = stations[i - 1]!
+    to = stations[i]!
+  }
+
+  if (from.x === to.x && from.y === to.y) {
+    // Degenerate segment — peek at the next hop if any.
+    if (i < last) {
+      from = stations[i]!
+      to = stations[i + 1]!
+    } else if (i > 0) {
+      from = stations[i - 1]!
+      to = stations[i]!
+    }
+  }
+
+  return segmentHeadingDeg(from, to)
+}
+
+/**
+ * Side-view train marker yaw/flip so the nose follows `travelDeg` without
+ * going belly-up (wheels toward screen top).
+ *
+ * PixelTrainHeadGlyph faces −X (nose/headlight on the left). Formula:
+ * - rightish (`cos(travelDeg) >= 0`): flip with `scaleX = -1`, `rotate = travelDeg`
+ * - leftish: keep `scaleX = 1`, `rotate = travelDeg - 180`
+ *
+ * Apply as:
+ * `translate(x,y) rotate(rotateDeg) scale(scale * scaleX, scale) translate(-cx,-cy)`
+ */
+export function trainMarkerTransform(travelDeg: number): {
+  rotateDeg: number
+  scaleX: number
+} {
+  const rad = (travelDeg * Math.PI) / 180
+  if (Math.cos(rad) >= 0) {
+    return { rotateDeg: travelDeg, scaleX: -1 }
+  }
+  return { rotateDeg: travelDeg - 180, scaleX: 1 }
+}

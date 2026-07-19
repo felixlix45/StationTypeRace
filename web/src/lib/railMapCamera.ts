@@ -9,11 +9,35 @@ export type RailMapCameraMode = 'idle' | 'racing' | 'finished'
 
 export type ViewBox = { x: number; y: number; w: number; h: number }
 
+/** Comfortable margin around the completed line on results. */
+export const FINISHED_FRAME_PADDING = 100
+/** Floor so short lines (e.g. Tanjung Priok) stay readable, not tight-cropped. */
+export const FINISHED_FRAME_MIN_SIZE = 240
+
 export function frameForLine(
   points: RailMapPoint[],
   opts: { padding: number; minSize: number },
 ): ViewBox {
   return viewBoxFromBounds(boundsOfPoints(points), opts.padding, opts.minSize)
+}
+
+/**
+ * Finished/results camera: frame the full selected path plus every station
+ * (stations can sit slightly off path polyline endpoints).
+ */
+export function frameForFinishedLine(
+  pathPoints: RailMapPoint[],
+  stationPoints: RailMapPoint[] = [],
+  opts: { padding: number; minSize: number } = {
+    padding: FINISHED_FRAME_PADDING,
+    minSize: FINISHED_FRAME_MIN_SIZE,
+  },
+): ViewBox {
+  const points =
+    stationPoints.length > 0
+      ? [...pathPoints, ...stationPoints]
+      : pathPoints
+  return frameForLine(points, opts)
 }
 
 /** Wide idle frame covering every line path in the network. */
