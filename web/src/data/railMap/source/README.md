@@ -50,7 +50,9 @@ npm run build:rail-map
 
 ## Attribution
 
-Station positions and corridor / admin outlines in the committed simplified GeoJSON are derived from publicly known coordinates and OpenStreetMap geometry.
+Station positions are taken from OpenStreetMap `railway=station` / LRT nodes (Overpass + Nominatim cross-check, 2026-07). Paths are straight segments between consecutive game stops (not full track centreline polylines). Land / kota outlines remain simplified.
+
+Notable corrections from earlier authored approx: Jakarta Kota longitude, Cikarang latitude, LRT Cibubur corridor (Harjamukti / Ciracas / Kampung Rambutan), Fatmawati, Velodrome, and several Rangkasbitung-line stops.
 
 © OpenStreetMap contributors, [ODbL](https://www.openstreetmap.org/copyright).
 
