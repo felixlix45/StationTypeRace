@@ -12,7 +12,7 @@ Working bbox (approx): `[106.45, -6.75, 107.15, -5.95]` — land ring may extend
 
 | File | Role |
 |------|------|
-| `land.geojson` | Jabodetabek land Polygon (coastline / inland), clipped to bbox |
+| `land.geojson` | West Java land Polygon — north coast along the Java Sea; inland extends past the bbox so the viewport is not an island-in-ocean |
 | `borders.geojson` | Kota admin polygons only (`id` + `name` properties) |
 | `line-<lineId>.geojson` | One FeatureCollection per playable line: a `LineString` path (`lineId`, `kind: "path"`) plus station `Point`s (`lineId`, `name`, `kind: "station"`) |
 
@@ -39,7 +39,7 @@ Station `name` strings should match `web/src/data/stations.ts` exactly. Unmatche
    Point features with property `name` exactly matching `stations.ts` (and `lineId` for the line file).
 
 4. **Land**  
-   Jabodetabek coastline polygon clipped to bbox approx `[106.45, -6.75, 107.15, -5.95]`.
+   West Java mass for the working bbox: follow the Java Sea / Jakarta Bay coastline on the north; extend the polygon south/east/west **past** the bbox so inland Java fills the frame (do not close a southern “coast” inside the viewport — that reads as an island).
 
 5. **Regenerate authored simplified sources** (optional helper used for this repo’s simplified real-geo set):
 

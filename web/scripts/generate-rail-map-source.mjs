@@ -503,22 +503,31 @@ const BORDERS = [
   },
 ]
 
-/** Land mass clipped to Jabodetabek working bbox (coast north, inland south). */
+/**
+ * West Java land within / beyond the working viewport.
+ * North edge ≈ real Java Sea coastline (incl. Jakarta Bay); south/east/west
+ * extend past the bbox so inland Java fills the frame (not a Jabodetabek island).
+ */
 const LAND_RING = [
-  [106.20, -6.12],
-  [106.45, -6.08],
-  [106.75, -6.06],
-  [106.95, -6.07],
-  [107.15, -6.10],
-  [107.20, -6.20],
-  [107.20, -6.45],
-  [107.10, -6.65],
-  [106.90, -6.72],
-  [106.70, -6.74],
-  [106.45, -6.72],
-  [106.25, -6.55],
-  [106.18, -6.35],
-  [106.20, -6.12],
+  // North coast west → east (Java Sea), simplified but bay-shaped
+  [106.1, -5.99],
+  [106.25, -6.0],
+  [106.4, -6.01],
+  [106.55, -6.03],
+  [106.65, -6.06], // toward Muara Angke
+  [106.72, -6.09], // Ancol / Jakarta Bay
+  [106.78, -6.1],
+  [106.85, -6.105], // Tanjung Priok bay
+  [106.92, -6.09],
+  [106.98, -6.07],
+  [107.05, -6.04],
+  [107.12, -6.02],
+  [107.2, -6.01],
+  [107.3, -6.0], // east of Cikarang / Karawang coast
+  // Inland: extend past bbox so the whole south of the viewport is land
+  [107.3, -6.95],
+  [106.1, -6.95],
+  [106.1, -5.99],
 ]
 
 function fc(features) {
@@ -536,7 +545,7 @@ writeJson(
   fc([
     {
       type: 'Feature',
-      properties: { name: 'Jabodetabek land' },
+      properties: { name: 'West Java land' },
       geometry: { type: 'Polygon', coordinates: [LAND_RING] },
     },
   ]),
