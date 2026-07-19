@@ -180,6 +180,21 @@ input {
     linear-gradient(180deg, rgb(10 16 28 / 0.38), rgb(10 16 28 / 0.62));
 }
 
+/* Race: lighter center so map + train head stay visible under chrome */
+.rail-map-backdrop[data-phase='racing'] .rail-map-backdrop__scrim {
+  background:
+    radial-gradient(ellipse at 50% 45%, rgb(10 16 28 / 0.18), rgb(10 16 28 / 0.58) 70%),
+    linear-gradient(180deg, rgb(10 16 28 / 0.42), rgb(10 16 28 / 0.72));
+}
+
+.rail-map-backdrop__train-mark {
+  pointer-events: none;
+  /* Soft halo so land-fill body + line outline stay readable on track and scrim */
+  filter:
+    drop-shadow(0 0 1.5px rgba(247, 247, 245, 0.55))
+    drop-shadow(0 0 1.25px rgba(0, 0, 0, 0.65));
+}
+
 .drone-backdrop {
   --drone-focus-x: 50%;
   --drone-focus-y: 48%;
@@ -1137,6 +1152,15 @@ input {
   --race-dock-height: 0px;
   /* --kb-inset / --vv-* come from JS on <html> — do not reset here or iOS
      overlay-keyboard docking is ignored (Android resizes-content stays at 0). */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  padding-top: max(0.65rem, env(safe-area-inset-top, 0px));
+  padding-inline: clamp(0.75rem, 2.5vw, 1.5rem);
   padding-bottom: calc(
     var(--race-rail-height) + var(--race-dock-height) + var(--kb-inset, 0px) +
       env(safe-area-inset-bottom, 0px)
@@ -1150,6 +1174,267 @@ input {
 .race-type-dock {
   width: 100%;
   margin-top: 0.35rem;
+}
+
+/* —— Map-first race chrome (Option C) —— */
+.race.race--map-first {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: stretch;
+  width: min(920px, 100%);
+  max-width: 100%;
+  min-height: 0;
+  margin-inline: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.race.race--map-first::before {
+  display: none;
+}
+
+.race-header-slim {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--line) 28%, transparent);
+  border-radius: 0.2rem;
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--ink) 84%, transparent) 0%,
+      color-mix(in srgb, var(--ink-2) 90%, transparent) 100%
+    );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ink) 50%, transparent),
+    0 10px 24px color-mix(in srgb, var(--ink) 45%, transparent);
+  backdrop-filter: blur(12px) saturate(1.15);
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+  animation: rise-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.line-meta--slim {
+  flex: 1 1 8rem;
+  min-width: 0;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.line-meta--slim .line-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-top: 0;
+}
+
+.line-meta--slim .line-system {
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+}
+
+.line-meta--slim .line-name {
+  margin: 0;
+  font-size: clamp(0.95rem, 2.4vw, 1.2rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat-block--slim {
+  flex: 0 0 auto;
+  text-align: right;
+  min-width: 0;
+}
+
+.stat-block--slim .stat-value {
+  margin: 0;
+  font-size: clamp(1.35rem, 3.5vw, 1.75rem);
+  line-height: 1;
+}
+
+.stat-block--slim .stat-sub {
+  margin-top: 0.12rem;
+  font-size: 0.62rem;
+}
+
+.race-controls--slim {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  margin-left: auto;
+  animation: none;
+}
+
+.race-controls--slim .btn-compact {
+  padding: 0.35rem 0.55rem;
+  font-size: 0.68rem;
+  min-height: 2rem;
+}
+
+.race-map-spacer {
+  flex: 1 1 auto;
+  min-height: 4.5rem;
+  pointer-events: none;
+}
+
+.race-bottom-chrome {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  max-width: 28rem;
+  margin-inline: auto;
+  padding: 0.55rem 0.85rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--line) 22%, transparent);
+  border-radius: 0.35rem;
+  background:
+    linear-gradient(
+      175deg,
+      color-mix(in srgb, var(--ink) 78%, transparent) 0%,
+      color-mix(in srgb, var(--ink-2) 86%, transparent) 100%
+    );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ink) 40%, transparent),
+    0 10px 24px color-mix(in srgb, var(--ink) 42%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--paper) 6%, transparent);
+  backdrop-filter: blur(14px) saturate(1.12);
+  -webkit-backdrop-filter: blur(14px) saturate(1.12);
+}
+
+.stop-count--strip {
+  margin: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--fog) 82%, var(--paper));
+}
+
+.race-type-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 0.45rem;
+}
+
+/* Beat base `.station-prompt-panel { display: contents }` */
+.station-prompt-panel.station-prompt-panel--strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.station-prompt-panel.station-prompt-panel--strip .prompt-label {
+  margin: 0;
+  text-align: center;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  min-height: 0;
+  color: color-mix(in srgb, var(--fog) 90%, var(--paper));
+}
+
+.station-prompt-panel.station-prompt-panel--strip .station-stage {
+  width: 100%;
+  height: clamp(3.35rem, 8.5vw, 4rem);
+  min-height: 3.35rem;
+  margin: 0;
+  /* Current upper-center; muted next peek below (monkeytype-style pre-read) */
+  --current-y: 32%;
+  --next-y: 78%;
+  --rise-gap: 1.15rem;
+}
+
+/* Keep next peek always visible in the strip — don't blank during slide */
+.station-prompt-panel.station-prompt-panel--strip .station-slide.is-next {
+  opacity: 1;
+  animation: none;
+}
+
+.station-prompt-panel.station-prompt-panel--strip
+  .station-stage.is-sliding
+  .station-slide.is-next {
+  animation: none;
+  animation-delay: 0s;
+  opacity: 1;
+}
+
+.station-prompt-panel.station-prompt-panel--strip .prompt-word {
+  font-size: clamp(1.1rem, 3.2vw, 1.5rem);
+  letter-spacing: 0.02em;
+}
+
+.station-prompt-panel.station-prompt-panel--strip .prompt-word.preview {
+  font-size: clamp(0.68rem, 2vw, 0.82rem);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  color: color-mix(in srgb, var(--paper) 58%, var(--fog));
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 85%, transparent);
+}
+
+.station-prompt-panel.station-prompt-panel--strip .prompt-word.preview::before {
+  font-size: 0.78em;
+  letter-spacing: 0.1em;
+  color: color-mix(in srgb, var(--signal) 62%, var(--fog));
+}
+
+.station-prompt-panel.station-prompt-panel--strip .station-slide {
+  width: 100%;
+  text-align: center;
+}
+
+.race-type-dock--strip {
+  width: 100%;
+  max-width: 22rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.race-type-dock--strip .station-type-form {
+  width: 100%;
+}
+
+.race-type-dock--strip .station-input {
+  padding: 0.55rem 0.75rem;
+  min-height: 2.55rem;
+  font-size: max(1rem, 16px);
+  text-align: center;
+  border: none;
+  border-bottom: none;
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+  transition: background 0.2s ease;
+}
+
+.race-type-dock--strip .station-input:focus {
+  border-bottom: none;
+  border-bottom-color: transparent;
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.race-type-dock--strip .space-hint {
+  margin: 0.3rem 0 0;
+  text-align: center;
+  font-size: 0.68rem;
 }
 
 /* Soft vignette so landmark peeks at edges while HUD stays readable */
@@ -5653,22 +5938,19 @@ input {
     padding-bottom: 0;
   }
 
-  .app[data-phase='racing'][data-kb='open'] .race-type-dock {
-    position: relative;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    z-index: auto;
-    box-sizing: border-box;
-    width: 100%;
-    margin: 0;
-    padding: 0.15rem 0.15rem 0.1rem;
-    background: none;
-    pointer-events: auto;
+  .app[data-phase='racing'][data-kb='open'] .race-type-dock .station-input,
+  .app[data-phase='racing'][data-kb='open'] .race-type-dock--strip .station-input {
+    border: none;
+    border-bottom: none;
+    border-radius: 0.25rem;
+    text-align: center;
+    background: color-mix(in srgb, var(--ink) 55%, transparent);
   }
 
-  .app[data-phase='racing'][data-kb='open'] .race-type-dock .station-input {
-    background: color-mix(in srgb, var(--ink) 55%, transparent);
+  .app[data-phase='racing'][data-kb='open'] .race-type-dock .station-input:focus,
+  .app[data-phase='racing'][data-kb='open'] .race-type-dock--strip .station-input:focus {
+    border-bottom: none;
+    border-bottom-color: transparent;
   }
 
   .app[data-phase='racing'][data-kb='open'] .race-type-dock .space-hint {
@@ -5684,7 +5966,8 @@ input {
     width: 100%;
   }
 
-  /* Free vertical room above the docked field while typing */
+  /* Free vertical room: hide slim header + stop count while typing */
+  .app[data-phase='racing'][data-kb='open'] .race-header-slim,
   .app[data-phase='racing'][data-kb='open'] .race-top,
   .app[data-phase='racing'][data-kb='open'] .race-controls,
   .app[data-phase='racing'][data-kb='open'] .progress-rail,
@@ -5692,7 +5975,7 @@ input {
     display: none;
   }
 
-  /* Transparent shell so the landmark shows between prompt card and dock. */
+  /* Transparent shell; map peeks between top prompt card and docked strip. */
   .app[data-phase='racing'][data-kb='open'] .race {
     flex: 1 1 auto;
     display: flex;
@@ -5712,15 +5995,28 @@ input {
     display: none;
   }
 
-  /* Compact top station card (Android-style plate, prompt only). */
-  .app[data-phase='racing'][data-kb='open'] .station-prompt-panel {
+  /* Flatten chrome so prompt / spacer / input are race flex children */
+  .app[data-phase='racing'][data-kb='open'] .race-bottom-chrome,
+  .app[data-phase='racing'][data-kb='open'] .race-type-strip {
+    display: contents;
+  }
+
+  .app[data-phase='racing'][data-kb='open'] .race-map-spacer {
+    flex: 1 1 auto;
+    order: 2;
+    min-height: 2.5rem;
+  }
+
+  .app[data-phase='racing'][data-kb='open'] .station-prompt-panel.station-prompt-panel--strip {
     position: relative;
-    display: block;
+    display: flex;
+    flex-direction: column;
+    order: 1;
     flex: 0 0 auto;
     width: 100%;
     box-sizing: border-box;
-    margin: 0 0 auto;
-    padding: 0.7rem 0.85rem 0.75rem;
+    margin: 0;
+    padding: 0.65rem 0.8rem 0.7rem;
     border: 1px solid color-mix(in srgb, var(--line) 28%, transparent);
     border-radius: 0.2rem;
     background:
@@ -5736,7 +6032,7 @@ input {
       inset 0 1px 0 color-mix(in srgb, var(--paper) 7%, transparent);
   }
 
-  .app[data-phase='racing'][data-kb='open'] .station-prompt-panel::before {
+  .app[data-phase='racing'][data-kb='open'] .station-prompt-panel.station-prompt-panel--strip::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -5748,16 +6044,43 @@ input {
   }
 
   .app[data-phase='racing'][data-kb='open'] .prompt-label {
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.3rem;
+    text-align: center;
   }
 
   .app[data-phase='racing'][data-kb='open'] .station-stage {
-    height: clamp(4.25rem, 22vw, 5.5rem);
-    min-height: 4.25rem;
+    height: clamp(4rem, 20vw, 5.25rem);
+    min-height: 4rem;
     margin: 0;
     --current-y: 34%;
-    --next-y: 82%;
-    --rise-gap: 1.65rem;
+    --next-y: 78%;
+    --rise-gap: 1rem;
+  }
+
+  .app[data-phase='racing'][data-kb='open'] .station-prompt-panel.station-prompt-panel--strip .prompt-word,
+  .app[data-phase='racing'][data-kb='open'] .station-prompt-panel.station-prompt-panel--strip .station-slide {
+    text-align: center;
+  }
+
+  .app[data-phase='racing'][data-kb='open'] .station-prompt-panel.station-prompt-panel--strip .station-slide.is-current {
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .app[data-phase='racing'][data-kb='open'] .race-type-dock,
+  .app[data-phase='racing'][data-kb='open'] .race-type-dock--strip {
+    order: 3;
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+    padding: 0.35rem 0.45rem 0.25rem;
+    border: 1px solid color-mix(in srgb, var(--line) 22%, transparent);
+    border-radius: 0.25rem;
+    background: color-mix(in srgb, var(--ink) 72%, transparent);
+    box-sizing: border-box;
+    align-items: stretch;
   }
 
   .app[data-phase='idle'] .hero {
@@ -5832,9 +6155,45 @@ input {
     max-width: 100%;
   }
 
-  .race {
+  .race:not(.race--map-first) {
     padding: 0.85rem 0.85rem 0.75rem;
     border-radius: 0.15rem;
+  }
+
+  .race.race--map-first {
+    width: 100%;
+  }
+
+  .race-header-slim {
+    gap: 0.4rem 0.55rem;
+    padding: 0.35rem 0.55rem;
+  }
+
+  .race-controls--slim {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .race-controls--slim .btn-compact {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 2.35rem;
+  }
+
+  .race-bottom-chrome {
+    max-width: none;
+    padding: 0.5rem 0.65rem 0.55rem;
+  }
+
+  .race-type-strip {
+    gap: 0.35rem;
+  }
+
+  .station-prompt-panel.station-prompt-panel--strip,
+  .race-type-dock--strip {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
   }
 
   .race-top {

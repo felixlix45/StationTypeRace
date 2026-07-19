@@ -8,7 +8,6 @@ import {
   type ShareCardVariant,
 } from './components/ShareCard'
 import { StationProgressRail } from './components/StationProgressRail'
-import { distanceProgress } from './lib/stationDistances'
 import {
   LINE_CATEGORIES,
   linesByCategory,
@@ -684,15 +683,6 @@ export default function App() {
     phase === 'racing' && race
       ? calcAccuracy(race.correctKeystrokes, race.incorrectKeystrokes)
       : 100
-  const progress =
-    race && race.line.stations.length > 0
-      ? distanceProgress(
-          race.line,
-          race.stationIndex,
-          currentStation.length > 0 ? race.input.length / currentStation.length : 0,
-        )
-      : 0
-
   const mapLineId =
     phase === 'idle' ? hoverLineId : (race?.line.id ?? null)
   const mapStationIndex = race?.stationIndex ?? 0
@@ -854,221 +844,213 @@ export default function App() {
 
       {phase === 'racing' && race && (
         <>
-          <section className="race" style={lineStyle(race.line.color)}>
-            <header className="race-top">
-              <div className="line-meta">
+          <section className="race race--map-first" style={lineStyle(race.line.color)}>
+            <header className="race-header-slim">
+              <div className="line-meta line-meta--slim">
                 <span className="line-dot" />
-                <div>
+                <div className="line-meta-text">
                   <p className="line-system">{race.line.system}</p>
                   <h2 className="line-name">{race.line.name}</h2>
-                  <p className="line-route">{race.line.route}</p>
                 </div>
               </div>
-              <div className="stat-block" aria-live="polite">
-                <span className="stat-label">WPM</span>
+              <div className="stat-block stat-block--slim" aria-live="polite">
                 <span className="stat-value">{formatWpm(liveWpm)}</span>
                 <span className="stat-sub">
-                  {formatAccuracy(liveAccuracy)}
+                  WPM
                   <span className="stat-sub-sep" aria-hidden="true">
                     ·
                   </span>
-                  {formatWpm(liveRawWpm)} raw
+                  {formatAccuracy(liveAccuracy)}
                 </span>
+              </div>
+              <div
+                className="race-controls race-controls--slim"
+                role="toolbar"
+                aria-label="Session controls"
+              >
+                <button
+                  type="button"
+                  className="btn ghost btn-compact"
+                  onClick={goHome}
+                  title="Esc"
+                >
+                  Home
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost btn-compact"
+                  onClick={restartSameLine}
+                  title="Alt+R"
+                >
+                  Restart
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost btn-compact"
+                  onClick={startRandomLine}
+                  title="Ctrl+Enter"
+                >
+                  New
+                </button>
               </div>
             </header>
 
-            <div className="race-controls" role="toolbar" aria-label="Session controls">
-              <button
-                type="button"
-                className="btn ghost btn-compact"
-                onClick={goHome}
-                title="Esc"
-              >
-                Home
-                <kbd className="key-hint">Esc</kbd>
-              </button>
-              <button
-                type="button"
-                className="btn ghost btn-compact"
-                onClick={restartSameLine}
-                title="Alt+R"
-              >
-                Restart
-                <kbd className="key-hint">Alt+R</kbd>
-              </button>
-              <button
-                type="button"
-                className="btn ghost btn-compact"
-                onClick={startRandomLine}
-                title="Ctrl+Enter"
-              >
-                New line
-                <kbd className="key-hint">Ctrl+↵</kbd>
-              </button>
-            </div>
+            {/* Map shows through; keeps chrome pinned top/bottom */}
+            <div className="race-map-spacer" aria-hidden="true" />
 
-            <div
-              className="progress-rail"
-              role="progressbar"
-              aria-valuenow={Math.round(progress * 100)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div className="progress-fill" style={{ width: `${progress * 100}%` }} />
-            </div>
-            <p className="stop-count">
-              Stop {Math.min(race.stationIndex + 1, race.line.stations.length)} of{' '}
-              {race.line.stations.length}
-            </p>
-
-            <div className="station-prompt-panel">
-              <p className="prompt-label">
-                {stationComplete
-                  ? nextStation
-                    ? 'Press Space for next station'
-                    : stationPerfect
-                      ? 'Finishing…'
-                      : 'Press Space or Enter to finish'
-                  : 'Type this station'}
+            <div className="race-bottom-chrome">
+              <p className="stop-count stop-count--strip">
+                Stop {Math.min(race.stationIndex + 1, race.line.stations.length)} of{' '}
+                {race.line.stations.length}
+                {liveRawWpm > 0 ? (
+                  <>
+                    <span className="stat-sub-sep" aria-hidden="true">
+                      ·
+                    </span>
+                    {formatWpm(liveRawWpm)} raw
+                  </>
+                ) : null}
               </p>
 
-              <div
-                className={['station-stage', isSliding ? 'is-sliding' : '']
-                  .filter(Boolean)
-                  .join(' ')}
-                aria-live="polite"
-              >
-                {slide && (
-                  <div
-                    key={`out-${slide.key}`}
-                    className="station-slide is-outgoing"
-                    aria-hidden="true"
-                  >
-                    <p className="prompt-word">
-                      <StationChars word={slide.outgoing} typed={slide.outgoing} />
-                    </p>
-                  </div>
-                )}
-                <div
-                  key={`cur-${race.stationIndex}`}
-                  className={[
-                    'station-slide',
-                    'is-current',
-                    isSliding ? 'is-entering' : '',
-                    stationComplete ? 'is-ready' : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                >
-                  <p className="prompt-word">
-                    <StationChars word={currentStation} typed={race.input} />
-                  </p>
-                </div>
-                {nextStation && (
-                  <div
-                    key={`next-${race.stationIndex}`}
-                    className="station-slide is-next"
-                    aria-hidden="true"
-                  >
-                    <p className="prompt-word preview">{nextStation}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="race-type-dock">
-              <form
-                className="station-type-form"
-                autoComplete="off"
-                onSubmit={(e) => e.preventDefault()}
-              >
-                {/*
-                  Safari Contact AutoFill + Android Autofill classify bare text
-                  inputs as name/address fields. one-time-code still invites the
-                  Autofill chrome. Decoy name/email fields absorb heuristics;
-                  the real prompt stays autocomplete=off + readOnly until focus.
-                */}
-                <div className="autofill-decoy" aria-hidden="true">
-                  <input
-                    type="text"
-                    name="name"
-                    autoComplete="name"
-                    tabIndex={-1}
-                    defaultValue=""
-                    readOnly
-                  />
-                  <input
-                    type="email"
-                    name="email"
-                    autoComplete="email"
-                    tabIndex={-1}
-                    defaultValue=""
-                    readOnly
-                  />
-                </div>
-                <label className="sr-only" htmlFor="station-input">
-                  Type the stop shown above
-                </label>
-                <input
-                  id="station-input"
-                  ref={inputRef}
-                  className="station-input"
-                  type="search"
-                  name="str-x7k2-prompt"
-                  value={race.input}
-                  readOnly={autofillGuard}
-                  onChange={(e) => onInputChange(e.target.value)}
-                  onBeforeInput={onStationBeforeInput}
-                  onPaste={(e) => e.preventDefault()}
-                  onDrop={(e) => e.preventDefault()}
-                  onKeyDown={onStationKeyDown}
-                  onPointerDown={(e) => unlockPromptField(e.currentTarget)}
-                  // Do not unlock on focus alone — programmatic focus must stay readOnly
-                  // on phones or Safari Contact AutoFill still attaches.
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  // Hint keyboards to skip predictive strip / writing AI.
-                  // Enforcement is in onStationBeforeInput + onInputChange.
-                  {...{ writingsuggestions: 'false' }}
-                  inputMode="text"
-                  enterKeyHint="next"
-                  aria-autocomplete="none"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-form-type="other"
-                  data-bwignore="true"
-                  placeholder={
-                    stationComplete
-                      ? isLastStation
-                        ? stationPerfect
+              <div className="race-type-strip">
+                <div className="station-prompt-panel station-prompt-panel--strip">
+                  <p className="prompt-label">
+                    {stationComplete
+                      ? nextStation
+                        ? 'Space → next'
+                        : stationPerfect
                           ? 'Finishing…'
-                          : 'Space or Enter to finish…'
-                        : 'Space to continue…'
-                      : autofillGuard
-                        ? 'Tap to type…'
-                        : 'Start typing…'
-                  }
-                />
-              </form>
-              {stationComplete && !(isLastStation && stationPerfect) && (
-                <p className="space-hint" role="status">
-                  {isLastStation ? (
-                    <>
-                      <kbd className="key-hint">Space</kbd>
-                      {' or '}
-                      <kbd className="key-hint">Enter</kbd>
-                      {' finish line'}
-                    </>
-                  ) : (
-                    <>
-                      <kbd className="key-hint">Space</kbd>
-                      {' next station'}
-                    </>
+                          : 'Space / Enter finish'
+                      : 'Type this station'}
+                  </p>
+                  <div
+                    className={['station-stage', isSliding ? 'is-sliding' : '']
+                      .filter(Boolean)
+                      .join(' ')}
+                    aria-live="polite"
+                  >
+                    {slide && (
+                      <div
+                        key={`out-${slide.key}`}
+                        className="station-slide is-outgoing"
+                        aria-hidden="true"
+                      >
+                        <p className="prompt-word">
+                          <StationChars word={slide.outgoing} typed={slide.outgoing} />
+                        </p>
+                      </div>
+                    )}
+                    <div
+                      key={`cur-${race.stationIndex}`}
+                      className={[
+                        'station-slide',
+                        'is-current',
+                        isSliding ? 'is-entering' : '',
+                        stationComplete ? 'is-ready' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      <p className="prompt-word">
+                        <StationChars word={currentStation} typed={race.input} />
+                      </p>
+                    </div>
+                    {nextStation && (
+                      <div
+                        key={`next-${race.stationIndex}`}
+                        className="station-slide is-next"
+                        aria-hidden="true"
+                      >
+                        <p className="prompt-word preview">{nextStation}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="race-type-dock race-type-dock--strip">
+                  <form
+                    className="station-type-form"
+                    autoComplete="off"
+                    onSubmit={(e) => e.preventDefault()}
+                  >
+                    <div className="autofill-decoy" aria-hidden="true">
+                      <input
+                        type="text"
+                        name="name"
+                        autoComplete="name"
+                        tabIndex={-1}
+                        defaultValue=""
+                        readOnly
+                      />
+                      <input
+                        type="email"
+                        name="email"
+                        autoComplete="email"
+                        tabIndex={-1}
+                        defaultValue=""
+                        readOnly
+                      />
+                    </div>
+                    <label className="sr-only" htmlFor="station-input">
+                      Type the stop shown above
+                    </label>
+                    <input
+                      id="station-input"
+                      ref={inputRef}
+                      className="station-input"
+                      type="search"
+                      name="str-x7k2-prompt"
+                      value={race.input}
+                      readOnly={autofillGuard}
+                      onChange={(e) => onInputChange(e.target.value)}
+                      onBeforeInput={onStationBeforeInput}
+                      onPaste={(e) => e.preventDefault()}
+                      onDrop={(e) => e.preventDefault()}
+                      onKeyDown={onStationKeyDown}
+                      onPointerDown={(e) => unlockPromptField(e.currentTarget)}
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="none"
+                      spellCheck={false}
+                      {...{ writingsuggestions: 'false' }}
+                      inputMode="text"
+                      enterKeyHint="next"
+                      aria-autocomplete="none"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      data-form-type="other"
+                      data-bwignore="true"
+                      placeholder={
+                        stationComplete
+                          ? isLastStation
+                            ? stationPerfect
+                              ? 'Finishing…'
+                              : 'Space or Enter…'
+                            : 'Space…'
+                          : autofillGuard
+                            ? 'Tap to type…'
+                            : 'Type…'
+                      }
+                    />
+                  </form>
+                  {stationComplete && !(isLastStation && stationPerfect) && (
+                    <p className="space-hint" role="status">
+                      {isLastStation ? (
+                        <>
+                          <kbd className="key-hint">Space</kbd>
+                          {' / '}
+                          <kbd className="key-hint">Enter</kbd>
+                        </>
+                      ) : (
+                        <>
+                          <kbd className="key-hint">Space</kbd>
+                          {' next'}
+                        </>
+                      )}
+                    </p>
                   )}
-                </p>
-              )}
+                </div>
+              </div>
             </div>
           </section>
 
