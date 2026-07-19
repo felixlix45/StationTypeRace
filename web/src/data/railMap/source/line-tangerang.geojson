@@ -1,0 +1,226 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tangerang",
+        "kind": "path"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            106.8018,
+            -6.1555
+          ],
+          [
+            106.7895,
+            -6.1615
+          ],
+          [
+            106.7715,
+            -6.1585
+          ],
+          [
+            106.7525,
+            -6.1555
+          ],
+          [
+            106.7355,
+            -6.1525
+          ],
+          [
+            106.7185,
+            -6.1555
+          ],
+          [
+            106.7055,
+            -6.1555
+          ],
+          [
+            106.6685,
+            -6.1685
+          ],
+          [
+            106.6555,
+            -6.1725
+          ],
+          [
+            106.6385,
+            -6.1755
+          ],
+          [
+            106.6305,
+            -6.1785
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tangerang",
+        "name": "Duri",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8018,
+          -6.1555
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tangerang",
+        "name": "Grogol",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.7895,
+          -6.1615
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tangerang",
+        "name": "Pesing",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.7715,
+          -6.1585
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tangerang",
+        "name": "Taman Kota",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.7525,
+          -6.1555
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tangerang",
+        "name": "Bojong Indah",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.7355,
+          -6.1525
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tangerang",
+        "name": "Rawa Buaya",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.7185,
+          -6.1555
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tangerang",
+        "name": "Kalideres",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.7055,
+          -6.1555
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tangerang",
+        "name": "Poris",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.6685,
+          -6.1685
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tangerang",
+        "name": "Batu Ceper",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.6555,
+          -6.1725
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tangerang",
+        "name": "Tanah Tinggi",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.6385,
+          -6.1755
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "tangerang",
+        "name": "Tangerang",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.6305,
+          -6.1785
+        ]
+      }
+    }
+  ]
+}

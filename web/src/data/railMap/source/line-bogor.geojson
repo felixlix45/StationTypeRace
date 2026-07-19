@@ -1,0 +1,530 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "kind": "path"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            106.8314,
+            -6.1376
+          ],
+          [
+            106.8278,
+            -6.1435
+          ],
+          [
+            106.8265,
+            -6.1497
+          ],
+          [
+            106.8275,
+            -6.1566
+          ],
+          [
+            106.8303,
+            -6.1667
+          ],
+          [
+            106.8328,
+            -6.1856
+          ],
+          [
+            106.841,
+            -6.1983
+          ],
+          [
+            106.8503,
+            -6.21
+          ],
+          [
+            106.8575,
+            -6.2258
+          ],
+          [
+            106.8589,
+            -6.2425
+          ],
+          [
+            106.8547,
+            -6.255
+          ],
+          [
+            106.8445,
+            -6.2675
+          ],
+          [
+            106.8442,
+            -6.2838
+          ],
+          [
+            106.8389,
+            -6.3085
+          ],
+          [
+            106.8347,
+            -6.3295
+          ],
+          [
+            106.8322,
+            -6.3385
+          ],
+          [
+            106.8315,
+            -6.3608
+          ],
+          [
+            106.832,
+            -6.3695
+          ],
+          [
+            106.8235,
+            -6.391
+          ],
+          [
+            106.8185,
+            -6.4045
+          ],
+          [
+            106.8035,
+            -6.4475
+          ],
+          [
+            106.795,
+            -6.4895
+          ],
+          [
+            106.7945,
+            -6.5305
+          ],
+          [
+            106.7905,
+            -6.5945
+          ],
+          [
+            106.8505,
+            -6.465
+          ],
+          [
+            106.862,
+            -6.4815
+          ],
+          [
+            106.905,
+            -6.4655
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Jakarta Kota",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8314,
+          -6.1376
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Jayakarta",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8278,
+          -6.1435
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Mangga Besar",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8265,
+          -6.1497
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Sawah Besar",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8275,
+          -6.1566
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Juanda",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8303,
+          -6.1667
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Gondangdia",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8328,
+          -6.1856
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Cikini",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.841,
+          -6.1983
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Manggarai",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8503,
+          -6.21
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Tebet",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8575,
+          -6.2258
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Cawang",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8589,
+          -6.2425
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Duren Kalibata",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8547,
+          -6.255
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Pasar Minggu Baru",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8445,
+          -6.2675
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Pasar Minggu",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8442,
+          -6.2838
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Tanjung Barat",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8389,
+          -6.3085
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Lenteng Agung",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8347,
+          -6.3295
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Universitas Pancasila",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8322,
+          -6.3385
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Universitas Indonesia",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8315,
+          -6.3608
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Pondok Cina",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.832,
+          -6.3695
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Depok Baru",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8235,
+          -6.391
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Depok",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8185,
+          -6.4045
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Citayam",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8035,
+          -6.4475
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Bojonggede",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.795,
+          -6.4895
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Cilebut",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.7945,
+          -6.5305
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Bogor",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.7905,
+          -6.5945
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Pondok Rajeg",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8505,
+          -6.465
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Cibinong",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.862,
+          -6.4815
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "bogor",
+        "name": "Nambo",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.905,
+          -6.4655
+        ]
+      }
+    }
+  ]
+}

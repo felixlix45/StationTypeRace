@@ -1,0 +1,131 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-jakarta",
+        "kind": "path"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            106.9125,
+            -6.1585
+          ],
+          [
+            106.9055,
+            -6.1655
+          ],
+          [
+            106.8985,
+            -6.1725
+          ],
+          [
+            106.8885,
+            -6.1785
+          ],
+          [
+            106.8785,
+            -6.1855
+          ],
+          [
+            106.8685,
+            -6.1925
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-jakarta",
+        "name": "Pegangsaan Dua",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.9125,
+          -6.1585
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-jakarta",
+        "name": "Boulevard Utara",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.9055,
+          -6.1655
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-jakarta",
+        "name": "Boulevard Selatan",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8985,
+          -6.1725
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-jakarta",
+        "name": "Pulomas",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8885,
+          -6.1785
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-jakarta",
+        "name": "Equestrian",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8785,
+          -6.1855
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "lrt-jakarta",
+        "name": "Velodrome",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8685,
+          -6.1925
+        ]
+      }
+    }
+  ]
+}

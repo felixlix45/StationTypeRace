@@ -1,0 +1,549 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "kind": "path"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            106.8703,
+            -6.2152
+          ],
+          [
+            106.8995,
+            -6.2135
+          ],
+          [
+            106.9235,
+            -6.2158
+          ],
+          [
+            106.9355,
+            -6.2145
+          ],
+          [
+            106.9525,
+            -6.2138
+          ],
+          [
+            106.9805,
+            -6.2215
+          ],
+          [
+            107.0005,
+            -6.2365
+          ],
+          [
+            107.0185,
+            -6.2485
+          ],
+          [
+            107.0505,
+            -6.2615
+          ],
+          [
+            107.0835,
+            -6.2755
+          ],
+          [
+            107.1125,
+            -6.2885
+          ],
+          [
+            107.1485,
+            -6.3015
+          ],
+          [
+            106.8285,
+            -6.1295
+          ],
+          [
+            106.8015,
+            -6.1445
+          ],
+          [
+            106.8018,
+            -6.1555
+          ],
+          [
+            106.8108,
+            -6.1855
+          ],
+          [
+            106.8185,
+            -6.2005
+          ],
+          [
+            106.8215,
+            -6.2025
+          ],
+          [
+            106.8235,
+            -6.2045
+          ],
+          [
+            106.8503,
+            -6.21
+          ],
+          [
+            106.8585,
+            -6.2045
+          ],
+          [
+            106.8355,
+            -6.1455
+          ],
+          [
+            106.8455,
+            -6.1555
+          ],
+          [
+            106.8445,
+            -6.1765
+          ],
+          [
+            106.8505,
+            -6.1855
+          ],
+          [
+            106.8555,
+            -6.1925
+          ],
+          [
+            106.8625,
+            -6.2055
+          ],
+          [
+            106.8314,
+            -6.1376
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Jatinegara",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8703,
+          -6.2152
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Klender",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8995,
+          -6.2135
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Buaran",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.9235,
+          -6.2158
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Klender Baru",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.9355,
+          -6.2145
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Cakung",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.9525,
+          -6.2138
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Kranji",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.9805,
+          -6.2215
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Bekasi",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          107.0005,
+          -6.2365
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Bekasi Timur",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          107.0185,
+          -6.2485
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Tambun",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          107.0505,
+          -6.2615
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Cibitung",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          107.0835,
+          -6.2755
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Metland Telagamurni",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          107.1125,
+          -6.2885
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Cikarang",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          107.1485,
+          -6.3015
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Kampung Bandan",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8285,
+          -6.1295
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Angke",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8015,
+          -6.1445
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Duri",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8018,
+          -6.1555
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Tanah Abang",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8108,
+          -6.1855
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Karet",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8185,
+          -6.2005
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "BNI City",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8215,
+          -6.2025
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Sudirman",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8235,
+          -6.2045
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Manggarai",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8503,
+          -6.21
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Matraman",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8585,
+          -6.2045
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Rajawali",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8355,
+          -6.1455
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Kemayoran",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8455,
+          -6.1555
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Pasar Senen",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8445,
+          -6.1765
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Gang Sentiong",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8505,
+          -6.1855
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Kramat",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8555,
+          -6.1925
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Pondok Jati",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8625,
+          -6.2055
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "lineId": "cikarang",
+        "name": "Jakarta Kota",
+        "kind": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8314,
+          -6.1376
+        ]
+      }
+    }
+  ]
+}
